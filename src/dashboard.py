@@ -161,7 +161,7 @@ with st.container():
         "Liability pricing using the French Motor Third-Party Liability Dataset. "
         "This dashboard visualises the gap between Technical Raw Model Predictions and "
         "Commercial Pricing due to actuarial loadings. Allowing us to visualise the impact of our"
-        "loadings on the model's performance.</p>",
+        " loadings on the model's performance.</p>",
         unsafe_allow_html=True,
     )
     repo_url = (
@@ -456,15 +456,14 @@ with tab1:
             "This chart measures the model's "
             "ability to segment risk. The Gini Coefficient scores this segmentation "
             "(0 = Random, 1 = Perfect). A higher Gini means the model is better at "
-            "identifying high-risk drivers."
-            ""
+            "identifying high-risk drivers. "
             "The x-axis shows the proportion of the drivers by risk, "
-            "the left hand side the least risky drivers and the right hand side the most risky"
-            "drivers. The y-axis shows the proportion of the total losses that actually occurred."
-            "If the model is perfect, the curve will be a straight line at 45 degrees (perfect"
-            "equality). The closer the blue curve is to the diagonal line, the better the model"
-            "is at predicting risk. The Gini Coefficient is the area between the blue curve and the"
-            "diagonal line. The higher the Gini, the better the model is at predicting risk."
+            "the left hand side the least risky drivers and the right hand side the most risky "
+            "drivers. The y-axis shows the proportion of the total losses that actually occurred. "
+            "If the model is perfect, the curve will be a straight line at 45 degrees. The further "
+            "the blue curve is to the diagonal line, the better the model "
+            "is at predicting risk. The Gini Coefficient is the area between the blue curve and "
+            "the diagonal line."
         )
 
 with tab2:
@@ -498,11 +497,11 @@ with tab2:
         "Gaps between Blue and Green indicate where Actuarial Strategy "
         "(Loadings/Discounts) has been applied."
         ""
-        "The x-axis shows the risk buckets (Deciles) from lowest to highest predicted risk."
-        "The blue line shows the model's predicted rates for each risk bucket."
-        "The green line shows the final prices (after applying our loadings) for each risk bucket."
-        "The red line shows the actual rates for each risk bucket."
-        "Notice how the green line (after loadings) matches the red line (actual) better than the"
+        "The x-axis shows the risk buckets (Deciles) from lowest to highest predicted risk. "
+        "The blue line shows the model's predicted rates for each risk bucket. "
+        "The green line shows the final prices (after applying our loadings) for each risk bucket. "
+        "The red line shows the actual rates for each risk bucket. "
+        "Notice how the green line (after loadings) matches the red line (actual) better than the "
         "blue line (base model)."
     )
 
@@ -548,12 +547,12 @@ with tab3:
 
     # Add explanatory text for non-technical users
     st.info(
-        "This chart is a dislocation histogram, it shows the distribution of price changes between"
-        "the Technical and Commercial pricing."
+        "This chart is a dislocation histogram, it shows the distribution of price changes between "
+        "the Technical and Commercial pricing. "
         "Positive values indicate customers paying more than the technical premium (the base model)"
-        ".Negative values indicate customers paying less (Discounts) due to our loadings."
-        "Since most of our graph is green, this means we are applying loadings to the model to also"
-        "make it better for the commercial market."
+        ".Negative values indicate customers paying less (Discounts) due to our loadings. "
+        "Since most of our graph is green, this means we are applying loadings to the model to "
+        "also make it better for the commercial market."
     )
 
     # Calculate metrics
