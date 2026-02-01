@@ -159,9 +159,9 @@ with st.container():
     st.markdown(
         '<p class="sub-header">A real-time simulation engine for Motor Third-Party '
         "Liability pricing using the French Motor Third-Party Liability Dataset. "
-        "This dashboard visualises the gap between Raw Model Predictions and "
-        "Market Pricing, allowing us to stress-test our pricing rules against "
-        "actual claims experience to maximise risk discrimination.</p>",
+        "This dashboard visualises the gap between Technical Raw Model Predictions and "
+        "Commercial Pricing due to actuarial loadings. Allowing us to visualise the impact of our"
+        "loadings on the model's performance.</p>",
         unsafe_allow_html=True,
     )
     repo_url = (
@@ -426,10 +426,19 @@ with tab1:
         **How to read these charts:**
         The Lift Chart segments the portfolio into 10 risk buckets (Deciles) from lowest to
         highest predicted risk.
+
+        * **The Technical View (The Left Graph)** shows the base model's predicted rates for each
+        risk bucket in green vs the actual rates in blue.
+        * **The Commercial View (The Right Graph)** shows the final prices (after applying our
+        loadings) for each risk bucket in green vs the actual rates in blue.
         * **Steep Slope:** A steep upward slope confirms the model successfully differentiates
         between safe (Decile 1) and risky (Decile 10) drivers.
         * **Close Alignment:** If the **Green line** (Predicted) closely tracks the **Blue line**
         (Actual), the model is accurately calibrated.
+        * **Impact on Gini:** The Gini Coefficient is a measure of the model's ability to predict
+        risk, the higher the Gini, the better the model is at predicting risk. Notice how the
+        Commercial Gini is higher than the Technical Gini, this is because we are applying loadings
+        to the model to make it better.
         """
     )
 
@@ -448,6 +457,14 @@ with tab1:
             "ability to segment risk. The Gini Coefficient scores this segmentation "
             "(0 = Random, 1 = Perfect). A higher Gini means the model is better at "
             "identifying high-risk drivers."
+            ""
+            "The x-axis shows the proportion of the drivers by risk, "
+            "the left hand side the least risky drivers and the right hand side the most risky"
+            "drivers. The y-axis shows the proportion of the total losses that actually occurred."
+            "If the model is perfect, the curve will be a straight line at 45 degrees (perfect"
+            "equality). The closer the blue curve is to the diagonal line, the better the model"
+            "is at predicting risk. The Gini Coefficient is the area between the blue curve and the"
+            "diagonal line. The higher the Gini, the better the model is at predicting risk."
         )
 
 with tab2:
@@ -480,6 +497,13 @@ with tab2:
         "the Technical Model (Blue), and the Final Commercial Price (Green). "
         "Gaps between Blue and Green indicate where Actuarial Strategy "
         "(Loadings/Discounts) has been applied."
+        ""
+        "The x-axis shows the risk buckets (Deciles) from lowest to highest predicted risk."
+        "The blue line shows the model's predicted rates for each risk bucket."
+        "The green line shows the final prices (after applying our loadings) for each risk bucket."
+        "The red line shows the actual rates for each risk bucket."
+        "Notice how the green line (after loadings) matches the red line (actual) better than the"
+        "blue line (base model)."
     )
 
     # Display detailed table for selected feature's key bin (if Driver Age selected)
@@ -524,9 +548,12 @@ with tab3:
 
     # Add explanatory text for non-technical users
     st.info(
-        "This chart shows the distribution of price changes. "
-        "Positive values indicate customers paying more than the technical premium (Loadings), "
-        "while negative values indicate customers paying less (Discounts)."
+        "This chart is a dislocation histogram, it shows the distribution of price changes between"
+        "the Technical and Commercial pricing."
+        "Positive values indicate customers paying more than the technical premium (the base model)"
+        ".Negative values indicate customers paying less (Discounts) due to our loadings."
+        "Since most of our graph is green, this means we are applying loadings to the model to also"
+        "make it better for the commercial market."
     )
 
     # Calculate metrics
