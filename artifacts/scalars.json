@@ -1,0 +1,11 @@
+{
+  "off_balance_factor": 0.8156706832008858,
+  "gini_technical": 0.4265437160109822,
+  "gini_commercial": 0.48115062327007185,
+  "avg_premium": 115.64596553388995,
+  "calibration_cap_threshold": 15000,
+  "severity_cap_percentile": 0.999,
+  "test_size": 0.2,
+  "random_state": 42,
+  "glm_alpha": 0.01
+}
