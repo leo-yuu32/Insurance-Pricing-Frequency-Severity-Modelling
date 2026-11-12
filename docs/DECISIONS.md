@@ -231,3 +231,131 @@ The last figure shows the large-loss problem from the other side: the load of 1.
 - **`requirements-dev.txt`** pins the modelling environment (statsmodels, lightgbm, shap, pytest and the versions of numpy, pandas and scikit-learn that produced these numbers). `requirements.txt` is left as it is, because it is what the deployed app installs and the app does not use the new code yet.
 - **The legacy pipeline stays in place** (`pricing_engine.py`, `frequency_model.py`, `severity_model.py`, `data_preprocessing.py`, `dashboard.py`) so the deployed app keeps working. It moves to `legacy/` when the dashboard is rebuilt.
 - **Caches.** The raw data and the fold assignment are cached in the git-ignored `data/` folder. Computing the grouped, stratified folds takes about four minutes; with the cache, `python src/run_glm.py` takes under a minute.
+
+---
+
+## Phase 3: the LightGBM frequency model
+
+### D16. Poisson objective, with exposure as an offset through `init_score`
+
+**Decision.** LightGBM with `objective = "poisson"`. The target is the claim count. Exposure is not a feature. It enters as an offset:
+
+`init_score = log(Exposure) + log(base_rate)`, where `base_rate` is the training claim frequency.
+
+**Why an offset.** It is the same model structure as the GLM: expected claims = exposure times a rate that depends on the rating factors. The trees then model the log of the rate relative to the base rate.
+
+**Why `base_rate` is included.** When an `init_score` is supplied, LightGBM starts boosting from it and does not add its own starting constant. With only `log(Exposure)`, the first trees would be spent moving every policy from a rate of 1 claim per year down to about 0.07. Putting the base rate in the offset means the trees start from the right level.
+
+**The two traps, and how the code avoids them.**
+
+1. `predict` returns the trees' contribution only and does not add the `init_score` back. The predicted rate is `base_rate * exp(raw_score)`, and the predicted claim count is that times exposure. `gbm.predict_rate` is the only place this is done. A test checks that predicted claims on the training data sum to the observed total.
+2. A validation set used for early stopping needs its own `init_score`, or it is scored as if every policy had one year of exposure. Every `Dataset` is built by the same function (`gbm.make_dataset`), so none can be created without it. A test checks the validation set's `init_score`.
+
+### D17. No monotone constraint on `BonusMalus`
+
+**Decision.** The primary GBM has no monotone constraint. A constrained version is tuned and reported alongside it, so the cost of the constraint is on record.
+
+**What was expected.** A higher bonus-malus score should mean a higher claim frequency, so an increasing constraint looked like a free way to make the GBM easier to defend.
+
+**What cross-validation on the training data showed.** Same parameters, four ways of treating `BonusMalus` (`python src/compare_gbm_constraints.py`):
+
+| Constraint on `BonusMalus` | CV deviance | Against no constraint |
+|---|---|---|
+| None | 0.448758 | |
+| Increasing, method `basic` (LightGBM default) | 0.451751 | +0.002993 |
+| Increasing, method `intermediate` | 0.451743 | +0.002985 |
+| Increasing, method `advanced` | 0.451664 | +0.002906 |
+
+The constraint costs 0.0030 of deviance, whichever method enforces it. For scale, the whole gain of the constrained GBM over the GLM in cross-validation is 0.0036. So this is not a quirk of one algorithm: the effect of `BonusMalus` is not monotone.
+
+**Why it is not monotone.** The French bonus-malus coefficient starts at 100. Each claim-free year multiplies it by 0.95 (truncated), down to a floor of 50, which gives a fixed "claim-free ladder": 100, 95, 90, 85, 80, 76, 72, 68, 64, 60, 57, 54, 51, 50. Each at-fault claim multiplies it by 1.25. A value below 100 that is not on the ladder can therefore only be reached by having had a claim. For example 62 is 50 times 1.25: a driver at the maximum bonus who then had a claim.
+
+Training frequencies by exact value show it:
+
+| `BonusMalus` | 57 | 58 | 60 | 62 | 63 | 64 | 68 | 72 | 75 | 76 | 77 | 80 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| On the ladder | yes | no | yes | no | no | yes | yes | yes | no | yes | no | yes |
+| Frequency | 0.056 | 0.172 | 0.068 | 0.283 | 0.158 | 0.066 | 0.071 | 0.077 | 0.240 | 0.083 | 0.372 | 0.095 |
+
+Across all values below 100, the off-ladder values hold 8% of training exposure and 20% of the claims (frequency 0.167, against 0.066 for all other policies). The curve is a sawtooth, and a model forced to be increasing has to flatten it. A driver at 62 is riskier than a driver at 64, and the score says so.
+
+**Is this leakage?** It would be if the recorded score had already been updated for the claims being predicted. It has not: 80% of the claims below a score of 100 happen to policies on ladder values, which a policy could not hold after an at-fault claim in the same period. The score describes the past.
+
+**Why not keep the constraint anyway.** A pricing team might: "a worse score never lowers the price" is easy to explain to a customer. But the purpose of the GBM in this project is to measure what the data support, so the benchmark is the unconstrained model. The constrained model is reported as what a team would give up for that rule.
+
+**Effect on the holdout.** Unconstrained 0.44780, constrained 0.45106 (D20). This was read after the decision, which was made on the cross-validation table above.
+
+### D18. The GBM's features
+
+All nine rating factors, raw: `VehPower`, `VehAge`, `DrivAge`, `BonusMalus` and `Density` as numbers; `Area` as 1 to 6 (it is ordered, A is rural and F is urban centre); `VehGas` as a 0/1 flag.
+
+**Brand and region are encoded as integers ordered by training claim frequency**, not as LightGBM categorical features.
+
+- *Why.* SHAP interaction values, which Phase 4 needs, cannot be computed for a LightGBM model with native categorical splits (the SHAP library fails on them). With every split numeric, they can.
+- *Is the encoding legitimate?* The order is computed from the rows the model is being fitted on, inside each cross-validation fold as well, so no validation or holdout information enters it. A tree can still separate any group of brands that are adjacent in the order.
+- *Cost.* Not measured against native categorical handling.
+
+### D19. Tuning
+
+**Decision.** Random search, 30 trials, scored by 4-fold cross-validated Poisson deviance on the training data, using the same grouped, stratified folds as every other choice. Each fit stops when the validation fold's loss has not improved for 50 rounds.
+
+| Parameter | Range searched | Chosen |
+|---|---|---|
+| `learning_rate` | 0.03 to 0.2 (log scale) | 0.0717 |
+| `num_leaves` | 8 to 64 | 26 |
+| `min_data_in_leaf` | 50 to 2,000 (log scale) | 84 |
+| `lambda_l2` | 0.01 to 32 (log scale) | 0.0252 |
+| Number of trees | mean early-stopping round over the four folds | 166 |
+
+The final model is fitted once on all training rows with these parameters and 166 trees. The parameters live in `outputs/gbm_tuning.json`, which `run_gbm.py` reads; every trial is logged there.
+
+**How much the tuning mattered.** The 30 trials span 0.44875 to 0.44930 in CV deviance, a range of 0.0006. The gap to the GLM (0.4554) is ten times that. The result does not depend on finding the right settings.
+
+**What the parameters do** (for the interview notes): the learning rate scales each tree's contribution, so a lower rate needs more trees and usually generalises a little better; `num_leaves` sets how complex one tree can be, and so how high an order of interaction it can represent; `min_data_in_leaf` stops a leaf being fitted to a handful of policies, which matters when only 4% of policies have a claim; `lambda_l2` shrinks leaf values towards zero.
+
+### D20. GLM versus GBM on the holdout
+
+Scored once, on the 133,726 holdout policies.
+
+| Frequency model | Poisson deviance | Deviance explained | Gini | Actual / expected |
+|---|---|---|---|---|
+| Null (training frequency) | 0.47703 | 0 | 0 | |
+| GLM (statsmodels, 63 parameters) | 0.45391 | 4.85% | 0.297 | 0.9997 |
+| GBM, `BonusMalus` constrained | 0.45106 | 5.44% | 0.310 | 0.9994 |
+| **GBM** | **0.44780** | **6.13%** | **0.320** | **1.0000** |
+
+| Difference in deviance from the GLM | Estimate | 95% bootstrap interval |
+|---|---|---|
+| GBM | 0.00611 | 0.00490 to 0.00732 |
+| GBM, `BonusMalus` constrained | 0.00285 | 0.00185 to 0.00387 |
+
+**Reading.** The GBM is better than the GLM, and the interval is well clear of zero. In relative terms the GBM explains 6.1% of the null deviance against the GLM's 4.9%: about a quarter more. The GLM already captures four fifths of what the GBM finds.
+
+**Overfitting check.** Deviance on training data against holdout: GLM 0.45468 and 0.45391; GBM 0.44147 and 0.44780. The GBM fits its training data more closely than it predicts new data, as expected, but its holdout score agrees with its cross-validation score (0.44875), which is the estimate that was used to choose it.
+
+**Rebalancing factors.** GBM frequency 0.9998; pure premium 1.0026. Both models are at the right overall level without adjustment.
+
+**The double-lift chart** (`plots/double_lift_glm_vs_gbm.png`). Policies sorted by GBM prediction over GLM prediction, ten bins of equal exposure:
+
+| Bin | GBM / GLM | Actual | GLM | GBM |
+|---|---|---|---|---|
+| 1 | 0.26 to 0.74 | 0.0645 | 0.1028 | 0.0670 |
+| 2 | 0.74 to 0.82 | 0.0662 | 0.0774 | 0.0607 |
+| 5 | 0.92 to 0.97 | 0.0654 | 0.0696 | 0.0657 |
+| 6 | 0.97 to 1.02 | 0.0681 | 0.0694 | 0.0690 |
+| 9 | 1.18 to 1.31 | 0.0775 | 0.0661 | 0.0817 |
+| 10 | 1.31 to 14.2 | 0.1240 | 0.0747 | 0.1215 |
+
+Where the models agree (bins 5 and 6) both are right. Where they disagree, the actual frequency follows the GBM: in bin 1 the GLM predicts 0.103 and the actual is 0.065; in bin 10 the GLM predicts 0.075 and the actual is 0.124. A GLM-priced book would be undercharging the tenth of the portfolio in bin 10 by about 40%, and an insurer pricing with the GBM would not want those policies at the GLM's price. That is the commercial meaning of the gap.
+
+**Pure premium (secondary).** With the shared severity model, Gini on capped losses is 0.335 for the GLM and 0.348 for the GBM; actual over expected on capped losses is 0.975 for both.
+
+**Small cells.** Brand `B14` shows actual over expected of 0.42 on the holdout under both models. It has about 450 policy-years there, so that is a dozen claims against an expected thirty: noise, not a model fault.
+
+### D21. The bootstrap interval
+
+**Decision.** The difference in holdout deviance between two models is reported with a paired bootstrap: holdout policies are resampled with replacement 1,000 times, both models are scored on each resample, and the 2.5th and 97.5th percentiles of the difference are reported.
+
+**Why paired.** Both models are scored on the same policies, and their errors are strongly correlated (a policy with an unlucky claim hurts both). Resampling the pair keeps that correlation, so the interval is for the difference, which is much tighter than comparing two separate intervals.
+
+**What it does and does not cover.** It answers "would this difference survive a different holdout sample?". It does not cover the randomness of the training sample or of the tuning.
