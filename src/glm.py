@@ -5,6 +5,8 @@ Severity:  Gamma, log link, response = average capped claim amount per policy,
            variance weights = number of claims on the policy.
 """
 
+import gc
+
 import numpy as np
 import statsmodels.api as sm
 
@@ -44,6 +46,10 @@ def cv_frequency_deviance(train, terms, interactions=()):
         result = fit_poisson(design.transform(fit_rows), fit_rows["ClaimNb"], fit_rows["Exposure"])
         rate = predict(result, design.transform(test_rows))
         total += poisson_deviance(test_rows["ClaimNb"], rate * test_rows["Exposure"])
+        # A statsmodels result keeps its design matrix alive through reference cycles. Without an
+        # explicit collection, repeated fits on 400,000 rows run the machine out of memory.
+        del result
+        gc.collect()
     return total / float(train["Exposure"].sum())
 
 

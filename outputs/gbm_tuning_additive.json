@@ -1,0 +1,378 @@
+{
+  "variant": "additive",
+  "n_trials_done": 30,
+  "best": {
+    "trial": 12,
+    "params": {
+      "learning_rate": 0.1095,
+      "num_leaves": 11,
+      "min_data_in_leaf": 105,
+      "lambda_l2": 0.0106
+    },
+    "cv_deviance": 0.4501510806342606,
+    "n_rounds": 418,
+    "seconds": 22999.0
+  },
+  "trials": [
+    {
+      "trial": 0,
+      "params": {
+        "learning_rate": 0.1303,
+        "num_leaves": 20,
+        "min_data_in_leaf": 1185,
+        "lambda_l2": 2.7592
+      },
+      "cv_deviance": 0.45033733428016964,
+      "n_rounds": 334,
+      "seconds": 80.1
+    },
+    {
+      "trial": 1,
+      "params": {
+        "learning_rate": 0.0359,
+        "num_leaves": 61,
+        "min_data_in_leaf": 828,
+        "lambda_l2": 5.6393
+      },
+      "cv_deviance": 0.4506590381862924,
+      "n_rounds": 1121,
+      "seconds": 317.4
+    },
+    {
+      "trial": 2,
+      "params": {
+        "learning_rate": 0.0383,
+        "num_leaves": 20,
+        "min_data_in_leaf": 196,
+        "lambda_l2": 17.5258
+      },
+      "cv_deviance": 0.4502000865235437,
+      "n_rounds": 985,
+      "seconds": 189.8
+    },
+    {
+      "trial": 3,
+      "params": {
+        "learning_rate": 0.1018,
+        "num_leaves": 44,
+        "min_data_in_leaf": 257,
+        "lambda_l2": 0.0624
+      },
+      "cv_deviance": 0.4504707897844895,
+      "n_rounds": 316,
+      "seconds": 112.9
+    },
+    {
+      "trial": 4,
+      "params": {
+        "learning_rate": 0.0859,
+        "num_leaves": 9,
+        "min_data_in_leaf": 1057,
+        "lambda_l2": 1.6249
+      },
+      "cv_deviance": 0.4502755873775611,
+      "n_rounds": 732,
+      "seconds": 118.5
+    },
+    {
+      "trial": 5,
+      "params": {
+        "learning_rate": 0.1264,
+        "num_leaves": 17,
+        "min_data_in_leaf": 1791,
+        "lambda_l2": 13.3636
+      },
+      "cv_deviance": 0.4503309526193086,
+      "n_rounds": 413,
+      "seconds": 96.5
+    },
+    {
+      "trial": 6,
+      "params": {
+        "learning_rate": 0.1314,
+        "num_leaves": 12,
+        "min_data_in_leaf": 280,
+        "lambda_l2": 0.0142
+      },
+      "cv_deviance": 0.4501730765898263,
+      "n_rounds": 341,
+      "seconds": 65.9
+    },
+    {
+      "trial": 7,
+      "params": {
+        "learning_rate": 0.0402,
+        "num_leaves": 33,
+        "min_data_in_leaf": 779,
+        "lambda_l2": 24.338
+      },
+      "cv_deviance": 0.45046324140955973,
+      "n_rounds": 1048,
+      "seconds": 242.5
+    },
+    {
+      "trial": 8,
+      "params": {
+        "learning_rate": 0.0557,
+        "num_leaves": 17,
+        "min_data_in_leaf": 283,
+        "lambda_l2": 0.046
+      },
+      "cv_deviance": 0.45018147783508905,
+      "n_rounds": 761,
+      "seconds": 147.2
+    },
+    {
+      "trial": 9,
+      "params": {
+        "learning_rate": 0.0384,
+        "num_leaves": 22,
+        "min_data_in_leaf": 116,
+        "lambda_l2": 2.2098
+      },
+      "cv_deviance": 0.45025824613719145,
+      "n_rounds": 903,
+      "seconds": 217.2
+    },
+    {
+      "trial": 10,
+      "params": {
+        "learning_rate": 0.0688,
+        "num_leaves": 45,
+        "min_data_in_leaf": 661,
+        "lambda_l2": 0.124
+      },
+      "cv_deviance": 0.45056711969008983,
+      "n_rounds": 592,
+      "seconds": 198.6
+    },
+    {
+      "trial": 11,
+      "params": {
+        "learning_rate": 0.1455,
+        "num_leaves": 43,
+        "min_data_in_leaf": 209,
+        "lambda_l2": 0.1021
+      },
+      "cv_deviance": 0.4504678851531607,
+      "n_rounds": 214,
+      "seconds": 97.1
+    },
+    {
+      "trial": 12,
+      "params": {
+        "learning_rate": 0.1095,
+        "num_leaves": 11,
+        "min_data_in_leaf": 105,
+        "lambda_l2": 0.0106
+      },
+      "cv_deviance": 0.4501510806342606,
+      "n_rounds": 418,
+      "seconds": 22999.0
+    },
+    {
+      "trial": 13,
+      "params": {
+        "learning_rate": 0.1335,
+        "num_leaves": 32,
+        "min_data_in_leaf": 673,
+        "lambda_l2": 5.402
+      },
+      "cv_deviance": 0.45044418284164683,
+      "n_rounds": 300,
+      "seconds": 21.1
+    },
+    {
+      "trial": 14,
+      "params": {
+        "learning_rate": 0.0717,
+        "num_leaves": 26,
+        "min_data_in_leaf": 84,
+        "lambda_l2": 0.0252
+      },
+      "cv_deviance": 0.45035749998374075,
+      "n_rounds": 443,
+      "seconds": 21.6
+    },
+    {
+      "trial": 15,
+      "params": {
+        "learning_rate": 0.1066,
+        "num_leaves": 21,
+        "min_data_in_leaf": 402,
+        "lambda_l2": 4.7588
+      },
+      "cv_deviance": 0.45026076686909816,
+      "n_rounds": 365,
+      "seconds": 14.9
+    },
+    {
+      "trial": 16,
+      "params": {
+        "learning_rate": 0.1,
+        "num_leaves": 25,
+        "min_data_in_leaf": 393,
+        "lambda_l2": 0.1158
+      },
+      "cv_deviance": 0.45031827818729564,
+      "n_rounds": 345,
+      "seconds": 13.9
+    },
+    {
+      "trial": 17,
+      "params": {
+        "learning_rate": 0.0318,
+        "num_leaves": 20,
+        "min_data_in_leaf": 110,
+        "lambda_l2": 0.2691
+      },
+      "cv_deviance": 0.4502428146825697,
+      "n_rounds": 1128,
+      "seconds": 40.3
+    },
+    {
+      "trial": 18,
+      "params": {
+        "learning_rate": 0.1514,
+        "num_leaves": 13,
+        "min_data_in_leaf": 62,
+        "lambda_l2": 0.0966
+      },
+      "cv_deviance": 0.4501698297416449,
+      "n_rounds": 280,
+      "seconds": 13.0
+    },
+    {
+      "trial": 19,
+      "params": {
+        "learning_rate": 0.0524,
+        "num_leaves": 32,
+        "min_data_in_leaf": 390,
+        "lambda_l2": 5.5417
+      },
+      "cv_deviance": 0.4503854389558985,
+      "n_rounds": 687,
+      "seconds": 28.2
+    },
+    {
+      "trial": 20,
+      "params": {
+        "learning_rate": 0.1058,
+        "num_leaves": 19,
+        "min_data_in_leaf": 1006,
+        "lambda_l2": 0.0384
+      },
+      "cv_deviance": 0.4503650045867892,
+      "n_rounds": 412,
+      "seconds": 17.1
+    },
+    {
+      "trial": 21,
+      "params": {
+        "learning_rate": 0.0313,
+        "num_leaves": 10,
+        "min_data_in_leaf": 717,
+        "lambda_l2": 0.4136
+      },
+      "cv_deviance": 0.45027084420022384,
+      "n_rounds": 1574,
+      "seconds": 55.7
+    },
+    {
+      "trial": 22,
+      "params": {
+        "learning_rate": 0.0407,
+        "num_leaves": 23,
+        "min_data_in_leaf": 88,
+        "lambda_l2": 2.736
+      },
+      "cv_deviance": 0.45030300617652697,
+      "n_rounds": 860,
+      "seconds": 46.4
+    },
+    {
+      "trial": 23,
+      "params": {
+        "learning_rate": 0.0699,
+        "num_leaves": 18,
+        "min_data_in_leaf": 152,
+        "lambda_l2": 1.6069
+      },
+      "cv_deviance": 0.45018916565785616,
+      "n_rounds": 532,
+      "seconds": 30.0
+    },
+    {
+      "trial": 24,
+      "params": {
+        "learning_rate": 0.0596,
+        "num_leaves": 10,
+        "min_data_in_leaf": 77,
+        "lambda_l2": 23.2617
+      },
+      "cv_deviance": 0.4501639661289667,
+      "n_rounds": 898,
+      "seconds": 51.8
+    },
+    {
+      "trial": 25,
+      "params": {
+        "learning_rate": 0.1682,
+        "num_leaves": 34,
+        "min_data_in_leaf": 133,
+        "lambda_l2": 24.6671
+      },
+      "cv_deviance": 0.45033061186989487,
+      "n_rounds": 190,
+      "seconds": 16.7
+    },
+    {
+      "trial": 26,
+      "params": {
+        "learning_rate": 0.1314,
+        "num_leaves": 36,
+        "min_data_in_leaf": 262,
+        "lambda_l2": 0.0897
+      },
+      "cv_deviance": 0.4504118927213394,
+      "n_rounds": 257,
+      "seconds": 21.6
+    },
+    {
+      "trial": 27,
+      "params": {
+        "learning_rate": 0.036,
+        "num_leaves": 52,
+        "min_data_in_leaf": 269,
+        "lambda_l2": 0.0511
+      },
+      "cv_deviance": 0.4505241068050842,
+      "n_rounds": 868,
+      "seconds": 68.0
+    },
+    {
+      "trial": 28,
+      "params": {
+        "learning_rate": 0.0536,
+        "num_leaves": 27,
+        "min_data_in_leaf": 96,
+        "lambda_l2": 9.9575
+      },
+      "cv_deviance": 0.45030597469469236,
+      "n_rounds": 616,
+      "seconds": 43.2
+    },
+    {
+      "trial": 29,
+      "params": {
+        "learning_rate": 0.1265,
+        "num_leaves": 36,
+        "min_data_in_leaf": 246,
+        "lambda_l2": 1.5688
+      },
+      "cv_deviance": 0.4504033641160261,
+      "n_rounds": 237,
+      "seconds": 26.4
+    }
+  ]
+}

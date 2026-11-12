@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from design import BANDS, Design, _band_labels, add_model_columns
+from design import BANDS, CLAIM_FREE_LADDER, Design, _band_labels, add_model_columns
 from glm import fit_gamma, fit_poisson, predict
 
 
@@ -35,6 +35,24 @@ def test_every_policy_gets_a_band():
     assert out["DrivAgeBand"].tolist() == ["18-19", "18-19", "20-21", "76+"]
     assert out["BonusMalusBand"].tolist() == ["50", "51-54", "100", "120+"]
     assert out["BonusMalusCapped"].max() == 150.0
+
+
+def test_claim_free_ladder():
+    # 100 times 0.95 each claim-free year, truncated to two decimals, down to the floor of 50.
+    ladder, value = [100], 1.00
+    while value > 0.50:
+        value = max(np.floor(value * 0.95 * 100 + 1e-9) / 100, 0.50)
+        ladder.append(int(round(value * 100)))
+    assert sorted(set(ladder)) == CLAIM_FREE_LADDER
+    df = pd.DataFrame({"DrivAge": 40.0, "VehAge": 5.0, "VehPower": 6.0, "Density": 100.0,
+                       "BonusMalus": [50.0, 62.0, 64.0, 63.0, 95.0, 100.0, 118.0]})
+    assert add_model_columns(df)["BonusMalusOffLadder"].tolist() == [0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+
+
+def test_coarse_bands_are_merges_of_the_fine_bands():
+    for coarse, fine in [("DrivAgeCoarse", "DrivAgeBand"), ("BonusMalusCoarse", "BonusMalusBand"),
+                         ("VehAgeCoarse", "VehAgeBand"), ("VehPowerCoarse", "VehPowerBand")]:
+        assert set(BANDS[coarse][1]) <= set(BANDS[fine][1]), coarse
 
 
 def test_reference_level_is_the_highest_exposure_level(toy):

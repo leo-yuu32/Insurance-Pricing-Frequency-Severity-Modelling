@@ -1,0 +1,694 @@
+{
+  "shap": {
+    "rows_for_importance": 10000,
+    "rows_for_interactions": 2000,
+    "sample": "training rows",
+    "additivity_max_error": 8.326672684688674e-15,
+    "mean_abs_shap_by_factor": {
+      "BonusMalus": 0.35173539220431427,
+      "Density": 0.11600263482980921,
+      "DrivAge": 0.11098294503267019,
+      "Region": 0.07954227881185261,
+      "VehGas": 0.07926882613286955,
+      "VehAge": 0.0789676637319031,
+      "VehBrand": 0.060265323657370674,
+      "VehPower": 0.02992118608250019,
+      "Area": 0.0005052143885687081
+    },
+    "mean_abs_main_effect_by_factor": {
+      "Area": 0.0006767916786988404,
+      "VehPower": 0.027775853702214883,
+      "VehAge": 0.08024263509296956,
+      "DrivAge": 0.12365659859511018,
+      "BonusMalus": 0.3373934627894514,
+      "VehBrand": 0.06512654120937701,
+      "VehGas": 0.07887774827764815,
+      "Density": 0.1166382448617842,
+      "Region": 0.08643280157750874
+    },
+    "interaction_ranking": [
+      {
+        "a": "DrivAge",
+        "b": "BonusMalus",
+        "mean_abs_interaction": 0.08186571634258219
+      },
+      {
+        "a": "BonusMalus",
+        "b": "Region",
+        "mean_abs_interaction": 0.05129561857197787
+      },
+      {
+        "a": "BonusMalus",
+        "b": "VehBrand",
+        "mean_abs_interaction": 0.05066885661676613
+      },
+      {
+        "a": "BonusMalus",
+        "b": "Density",
+        "mean_abs_interaction": 0.036650484804168056
+      },
+      {
+        "a": "VehAge",
+        "b": "BonusMalus",
+        "mean_abs_interaction": 0.027614386412578743
+      },
+      {
+        "a": "VehAge",
+        "b": "VehBrand",
+        "mean_abs_interaction": 0.02333693593822086
+      },
+      {
+        "a": "Density",
+        "b": "Region",
+        "mean_abs_interaction": 0.019660445583053472
+      },
+      {
+        "a": "DrivAge",
+        "b": "Density",
+        "mean_abs_interaction": 0.01827090443210401
+      },
+      {
+        "a": "DrivAge",
+        "b": "VehGas",
+        "mean_abs_interaction": 0.01772986665562168
+      },
+      {
+        "a": "DrivAge",
+        "b": "VehBrand",
+        "mean_abs_interaction": 0.017413799156855203
+      },
+      {
+        "a": "VehAge",
+        "b": "DrivAge",
+        "mean_abs_interaction": 0.01727147084232536
+      },
+      {
+        "a": "VehAge",
+        "b": "Density",
+        "mean_abs_interaction": 0.016307656048134698
+      }
+    ]
+  },
+  "selection": {
+    "criterion": "4-fold cross-validated Poisson deviance on training data",
+    "glm_cv_deviance": 0.4553629721876282,
+    "skipped_as_too_large": [],
+    "interactions_added_to_glm": [
+      {
+        "factors": [
+          "DrivAge",
+          "BonusMalus"
+        ],
+        "glm_terms": [
+          "DrivAgeCoarse",
+          "BonusMalusCoarse"
+        ],
+        "mean_abs_shap_interaction": 0.08186571634258219,
+        "extra_parameters": 4,
+        "cv_deviance": 0.4548221271483668,
+        "cv_deviance_reduction": 0.0005408450392614395,
+        "lr_statistic": 163.535140023625,
+        "lr_p_value": 2.5506786681452733e-34
+      },
+      {
+        "factors": [
+          "BonusMalus",
+          "Region"
+        ],
+        "glm_terms": [
+          "BonusMalusCoarse",
+          "Region"
+        ],
+        "mean_abs_shap_interaction": 0.05129561857197787,
+        "extra_parameters": 42,
+        "cv_deviance": 0.45448547412679635,
+        "cv_deviance_reduction": 0.0008774980608318717,
+        "lr_statistic": 323.308917628543,
+        "lr_p_value": 4.3343231193875415e-45
+      },
+      {
+        "factors": [
+          "BonusMalus",
+          "VehBrand"
+        ],
+        "glm_terms": [
+          "BonusMalusCoarse",
+          "VehBrand"
+        ],
+        "mean_abs_shap_interaction": 0.05066885661676613,
+        "extra_parameters": 20,
+        "cv_deviance": 0.4548144297013907,
+        "cv_deviance_reduction": 0.0005485424862375354,
+        "lr_statistic": 197.45818300539395,
+        "lr_p_value": 3.579164969553581e-31
+      },
+      {
+        "factors": [
+          "BonusMalus",
+          "Density"
+        ],
+        "glm_terms": [
+          "BonusMalusCoarse",
+          "LogDensity"
+        ],
+        "mean_abs_shap_interaction": 0.036650484804168056,
+        "extra_parameters": 2,
+        "cv_deviance": 0.45509847044703117,
+        "cv_deviance_reduction": 0.0002645017405970562,
+        "lr_statistic": 77.30075223403401,
+        "lr_p_value": 1.6381547630133397e-17
+      },
+      {
+        "factors": [
+          "VehAge",
+          "BonusMalus"
+        ],
+        "glm_terms": [
+          "VehAgeCoarse",
+          "BonusMalusCoarse"
+        ],
+        "mean_abs_shap_interaction": 0.027614386412578743,
+        "extra_parameters": 4,
+        "cv_deviance": 0.4550724763648314,
+        "cv_deviance_reduction": 0.0002904958227968324,
+        "lr_statistic": 95.60523475491209,
+        "lr_p_value": 8.472862665757796e-20
+      }
+    ],
+    "chosen_interaction": {
+      "factors": [
+        "BonusMalus",
+        "Region"
+      ],
+      "glm_terms": [
+        "BonusMalusCoarse",
+        "Region"
+      ],
+      "mean_abs_shap_interaction": 0.05129561857197787,
+      "extra_parameters": 42,
+      "cv_deviance": 0.45448547412679635,
+      "cv_deviance_reduction": 0.0008774980608318717,
+      "lr_statistic": 323.308917628543,
+      "lr_p_value": 4.3343231193875415e-45
+    },
+    "ladder_term": {
+      "term": "BonusMalusOffLadder",
+      "extra_parameters": 1,
+      "cv_deviance": 0.45161712066592924,
+      "cv_deviance_reduction": 0.003745851521698984,
+      "lr_statistic": 1058.6454925826984,
+      "lr_p_value": 3.215197483027419e-232
+    },
+    "interactions_added_to_glm_with_ladder": [
+      {
+        "factors": [
+          "DrivAge",
+          "BonusMalus"
+        ],
+        "glm_terms": [
+          "DrivAgeCoarse",
+          "BonusMalusCoarse"
+        ],
+        "mean_abs_shap_interaction": 0.08186571634258219,
+        "extra_parameters": 4,
+        "cv_deviance": 0.45140410067748543,
+        "cv_deviance_reduction": 0.00021301998844380776,
+        "lr_statistic": 71.60231805691728,
+        "lr_p_value": 1.0413954717202229e-14
+      },
+      {
+        "factors": [
+          "BonusMalus",
+          "Region"
+        ],
+        "glm_terms": [
+          "BonusMalusCoarse",
+          "Region"
+        ],
+        "mean_abs_shap_interaction": 0.05129561857197787,
+        "extra_parameters": 42,
+        "cv_deviance": 0.4507569797808247,
+        "cv_deviance_reduction": 0.0008601408851045544,
+        "lr_statistic": 318.2133222401608,
+        "lr_p_value": 4.040142185945865e-44
+      },
+      {
+        "factors": [
+          "BonusMalus",
+          "VehBrand"
+        ],
+        "glm_terms": [
+          "BonusMalusCoarse",
+          "VehBrand"
+        ],
+        "mean_abs_shap_interaction": 0.05066885661676613,
+        "extra_parameters": 20,
+        "cv_deviance": 0.4510821786896705,
+        "cv_deviance_reduction": 0.0005349419762587515,
+        "lr_statistic": 192.92075896682218,
+        "lr_p_value": 2.8132377804773213e-30
+      },
+      {
+        "factors": [
+          "BonusMalus",
+          "Density"
+        ],
+        "glm_terms": [
+          "BonusMalusCoarse",
+          "LogDensity"
+        ],
+        "mean_abs_shap_interaction": 0.036650484804168056,
+        "extra_parameters": 2,
+        "cv_deviance": 0.4513689127452667,
+        "cv_deviance_reduction": 0.0002482079206625465,
+        "lr_statistic": 72.74971003367682,
+        "lr_p_value": 1.594414319609664e-16
+      },
+      {
+        "factors": [
+          "VehAge",
+          "BonusMalus"
+        ],
+        "glm_terms": [
+          "VehAgeCoarse",
+          "BonusMalusCoarse"
+        ],
+        "mean_abs_shap_interaction": 0.027614386412578743,
+        "extra_parameters": 4,
+        "cv_deviance": 0.45131051014060547,
+        "cv_deviance_reduction": 0.0003066105253237694,
+        "lr_statistic": 100.08058833528776,
+        "lr_p_value": 9.45560973113236e-21
+      }
+    ],
+    "chosen_interaction_given_ladder": {
+      "factors": [
+        "BonusMalus",
+        "Region"
+      ],
+      "glm_terms": [
+        "BonusMalusCoarse",
+        "Region"
+      ],
+      "mean_abs_shap_interaction": 0.05129561857197787,
+      "extra_parameters": 42,
+      "cv_deviance": 0.4507569797808247,
+      "cv_deviance_reduction": 0.0008601408851045544,
+      "lr_statistic": 318.2133222401608,
+      "lr_p_value": 4.040142185945865e-44
+    }
+  },
+  "models": {
+    "glm_int": {
+      "terms": [
+        "DrivAgeBand",
+        "VehAgeBand",
+        "VehPowerBand",
+        "BonusMalusBand",
+        "LogDensity",
+        "VehBrand",
+        "VehGas",
+        "Region"
+      ],
+      "interactions": [
+        [
+          "BonusMalusCoarse",
+          "Region"
+        ]
+      ],
+      "frequency_parameters": 105,
+      "frequency_rebalance_factor": 0.9999999999999865,
+      "pure_premium_rebalance_factor": 1.0017103974052348,
+      "holdout": {
+        "frequency": {
+          "poisson_deviance": 0.4533926249001202,
+          "null_deviance": 0.4770300891687389,
+          "deviance_explained": 0.04955130673163355,
+          "gini": 0.29809009834620226,
+          "a_over_e": 1.0002779217012487
+        },
+        "frequency_a_over_e_by_factor": {
+          "DrivAgeBand": {
+            "18-19": 0.8869,
+            "20-21": 0.9553,
+            "22-23": 0.9914,
+            "24-25": 0.9842,
+            "26-30": 1.0303,
+            "31-40": 0.985,
+            "41-50": 0.9934,
+            "51-60": 1.0045,
+            "61-75": 1.0489,
+            "76+": 0.9624
+          },
+          "BonusMalusBand": {
+            "100": 0.983,
+            "101-119": 1.0092,
+            "120+": 1.0414,
+            "50": 1.0069,
+            "51-54": 0.9937,
+            "55-64": 1.0101,
+            "65-79": 1.1021,
+            "80-94": 0.9087,
+            "95-99": 0.7998
+          },
+          "VehAgeBand": {
+            "0-1": 1.0287,
+            "13-17": 0.9833,
+            "18+": 1.0013,
+            "2-5": 1.0768,
+            "6-12": 0.9445
+          },
+          "VehPowerBand": {
+            "10": 0.9976,
+            "11": 0.9313,
+            "12+": 0.9839,
+            "4": 0.9395,
+            "5": 1.0005,
+            "6": 0.961,
+            "7": 1.0534,
+            "8": 1.0135,
+            "9": 1.2073
+          },
+          "Area": {
+            "A": 1.0505,
+            "B": 1.0276,
+            "C": 1.0016,
+            "D": 1.0031,
+            "E": 0.968,
+            "F": 0.9178
+          },
+          "VehBrand": {
+            "B1": 1.0273,
+            "B10": 1.022,
+            "B11": 1.0029,
+            "B12": 1.0026,
+            "B13": 0.928,
+            "B14": 0.414,
+            "B2": 0.9715,
+            "B3": 1.0134,
+            "B4": 0.991,
+            "B5": 1.056,
+            "B6": 0.9943
+          },
+          "VehGas": {
+            "Diesel": 1.0017,
+            "Regular": 0.9988
+          }
+        },
+        "pure_premium": {
+          "a_over_e_capped_losses": 0.9760474717505288,
+          "a_over_e_all_losses_after_large_loss_load": 0.835731918932094,
+          "gini_capped_losses": 0.32760814230495117,
+          "gini_all_losses": 0.33235276999737107,
+          "gini_excluding_largest_policy": 0.31281334434681873
+        }
+      }
+    },
+    "glm_ladder": {
+      "terms": [
+        "DrivAgeBand",
+        "VehAgeBand",
+        "VehPowerBand",
+        "BonusMalusBand",
+        "LogDensity",
+        "VehBrand",
+        "VehGas",
+        "Region",
+        "BonusMalusOffLadder"
+      ],
+      "interactions": [],
+      "frequency_parameters": 64,
+      "frequency_rebalance_factor": 0.9999999999999617,
+      "pure_premium_rebalance_factor": 1.0017103974052097,
+      "holdout": {
+        "frequency": {
+          "poisson_deviance": 0.44990992798261764,
+          "null_deviance": 0.4770300891687389,
+          "deviance_explained": 0.056852097596988505,
+          "gini": 0.3148549790427384,
+          "a_over_e": 1.0005438726584224
+        },
+        "frequency_a_over_e_by_factor": {
+          "DrivAgeBand": {
+            "18-19": 0.8753,
+            "20-21": 0.9534,
+            "22-23": 0.9946,
+            "24-25": 0.9814,
+            "26-30": 1.0283,
+            "31-40": 0.9873,
+            "41-50": 0.9944,
+            "51-60": 1.0046,
+            "61-75": 1.0474,
+            "76+": 0.9619
+          },
+          "BonusMalusBand": {
+            "100": 0.9768,
+            "101-119": 0.9847,
+            "120+": 1.0508,
+            "50": 1.007,
+            "51-54": 0.9895,
+            "55-64": 1.0163,
+            "65-79": 1.0985,
+            "80-94": 0.9134,
+            "95-99": 0.8044
+          },
+          "VehAgeBand": {
+            "0-1": 1.0265,
+            "13-17": 0.9835,
+            "18+": 1.0023,
+            "2-5": 1.0769,
+            "6-12": 0.9456
+          },
+          "VehPowerBand": {
+            "10": 0.9996,
+            "11": 0.937,
+            "12+": 0.9985,
+            "4": 0.9348,
+            "5": 0.9997,
+            "6": 0.9615,
+            "7": 1.0546,
+            "8": 1.0138,
+            "9": 1.2121
+          },
+          "Area": {
+            "A": 1.0436,
+            "B": 1.0278,
+            "C": 0.9999,
+            "D": 1.0121,
+            "E": 0.9665,
+            "F": 0.9111
+          },
+          "VehBrand": {
+            "B1": 1.0283,
+            "B10": 1.0235,
+            "B11": 1.0012,
+            "B12": 1.0051,
+            "B13": 0.9261,
+            "B14": 0.4335,
+            "B2": 0.9702,
+            "B3": 1.0101,
+            "B4": 0.9869,
+            "B5": 1.0549,
+            "B6": 1.0013
+          },
+          "VehGas": {
+            "Diesel": 1.0021,
+            "Regular": 0.999
+          }
+        },
+        "pure_premium": {
+          "a_over_e_capped_losses": 0.9761052636796079,
+          "a_over_e_all_losses_after_large_loss_load": 0.835781402754537,
+          "gini_capped_losses": 0.3479680619295442,
+          "gini_all_losses": 0.3535795856662478,
+          "gini_excluding_largest_policy": 0.3358221521592135
+        }
+      }
+    },
+    "glm_both": {
+      "terms": [
+        "DrivAgeBand",
+        "VehAgeBand",
+        "VehPowerBand",
+        "BonusMalusBand",
+        "LogDensity",
+        "VehBrand",
+        "VehGas",
+        "Region",
+        "BonusMalusOffLadder"
+      ],
+      "interactions": [
+        [
+          "BonusMalusCoarse",
+          "Region"
+        ]
+      ],
+      "frequency_parameters": 106,
+      "frequency_rebalance_factor": 1.0000000000000007,
+      "pure_premium_rebalance_factor": 1.0017103974052488,
+      "holdout": {
+        "frequency": {
+          "poisson_deviance": 0.4493984270505805,
+          "null_deviance": 0.4770300891687389,
+          "deviance_explained": 0.05792435895670378,
+          "gini": 0.31549501870116803,
+          "a_over_e": 1.0010899740453247
+        },
+        "frequency_a_over_e_by_factor": {
+          "DrivAgeBand": {
+            "18-19": 0.8845,
+            "20-21": 0.9545,
+            "22-23": 0.9885,
+            "24-25": 0.9842,
+            "26-30": 1.0308,
+            "31-40": 0.9869,
+            "41-50": 0.9953,
+            "51-60": 1.0042,
+            "61-75": 1.0486,
+            "76+": 0.9649
+          },
+          "BonusMalusBand": {
+            "100": 0.9827,
+            "101-119": 1.004,
+            "120+": 1.0331,
+            "50": 1.0067,
+            "51-54": 0.9914,
+            "55-64": 1.0166,
+            "65-79": 1.0987,
+            "80-94": 0.9126,
+            "95-99": 0.8055
+          },
+          "VehAgeBand": {
+            "0-1": 1.0267,
+            "13-17": 0.9838,
+            "18+": 1.0032,
+            "2-5": 1.0781,
+            "6-12": 0.9459
+          },
+          "VehPowerBand": {
+            "10": 1.0008,
+            "11": 0.9418,
+            "12+": 0.9937,
+            "4": 0.9388,
+            "5": 0.9989,
+            "6": 0.9622,
+            "7": 1.0534,
+            "8": 1.0158,
+            "9": 1.2098
+          },
+          "Area": {
+            "A": 1.0498,
+            "B": 1.0281,
+            "C": 1.0007,
+            "D": 1.0061,
+            "E": 0.9691,
+            "F": 0.9202
+          },
+          "VehBrand": {
+            "B1": 1.0295,
+            "B10": 1.019,
+            "B11": 0.9989,
+            "B12": 1.0051,
+            "B13": 0.9332,
+            "B14": 0.4287,
+            "B2": 0.9705,
+            "B3": 1.0118,
+            "B4": 0.9867,
+            "B5": 1.054,
+            "B6": 1.0045
+          },
+          "VehGas": {
+            "Diesel": 1.0022,
+            "Regular": 0.9999
+          }
+        },
+        "pure_premium": {
+          "a_over_e_capped_losses": 0.9767711547181475,
+          "a_over_e_all_losses_after_large_loss_load": 0.8363515660012489,
+          "gini_capped_losses": 0.3404721218175226,
+          "gini_all_losses": 0.3447022223095789,
+          "gini_excluding_largest_policy": 0.3263388710676449
+        }
+      }
+    }
+  },
+  "gap": {
+    "holdout_deviance": {
+      "glm": 0.4539109005143823,
+      "glm_int": 0.4533926249001202,
+      "glm_ladder": 0.44990992798261764,
+      "glm_both": 0.4493984270505805,
+      "gbm_additive": 0.4487621261198494,
+      "gbm_monotone": 0.451058602092644,
+      "gbm": 0.4478039606930097
+    },
+    "holdout_gini": {
+      "glm": 0.2965680674439375,
+      "glm_int": 0.29809009834620226,
+      "glm_ladder": 0.3148549790427384,
+      "glm_both": 0.31549501870116803,
+      "gbm_additive": 0.31864740853734896,
+      "gbm_monotone": 0.3100943989738686,
+      "gbm": 0.31974923224161933
+    },
+    "glm_to_gbm": {
+      "deviance_reduction": 0.0061069398213725425,
+      "bootstrap_95_low": 0.004903456760514029,
+      "bootstrap_95_high": 0.00731778494925751
+    },
+    "glm_int": {
+      "glm_to_model": {
+        "deviance_reduction": 0.0005182756142620801,
+        "bootstrap_95_low": -8.836236114818676e-06,
+        "bootstrap_95_high": 0.001006450500351211
+      },
+      "model_to_gbm": {
+        "deviance_reduction": 0.005588664207110463,
+        "bootstrap_95_low": 0.0043970986787435365,
+        "bootstrap_95_high": 0.006736514199571899
+      },
+      "share_of_gap_closed_deviance": 0.08486666471614401,
+      "share_of_gap_closed_gini": 0.06565808558580181,
+      "share_of_interaction_portion_closed": 0.5409041066859668
+    },
+    "glm_ladder": {
+      "glm_to_model": {
+        "deviance_reduction": 0.004000972531764678,
+        "bootstrap_95_low": 0.003128795555973678,
+        "bootstrap_95_high": 0.004859068321065843
+      },
+      "model_to_gbm": {
+        "deviance_reduction": 0.0021059672896078653,
+        "bootstrap_95_low": 0.0009848265053520784,
+        "bootstrap_95_high": 0.003269716126735207
+      },
+      "share_of_gap_closed_deviance": 0.6551517861306531,
+      "share_of_gap_closed_gini": 0.7888694014474044
+    },
+    "glm_both": {
+      "glm_to_model": {
+        "deviance_reduction": 0.004512473463801832,
+        "bootstrap_95_low": 0.0035645818361034606,
+        "bootstrap_95_high": 0.005575515340256233
+      },
+      "model_to_gbm": {
+        "deviance_reduction": 0.0015944663575707108,
+        "bootstrap_95_low": 0.0005140844891232927,
+        "bootstrap_95_high": 0.002701424274082494
+      },
+      "share_of_gap_closed_deviance": 0.7389091092742436,
+      "share_of_gap_closed_gini": 0.8164797335431251,
+      "share_of_interaction_portion_closed_by_the_interaction": 0.533833634265275
+    },
+    "glm_to_additive_gbm": {
+      "deviance_reduction": 0.005148774394532883,
+      "bootstrap_95_low": 0.004107455970109328,
+      "bootstrap_95_high": 0.0062356063339560645
+    },
+    "additive_gbm_to_gbm": {
+      "deviance_reduction": 0.0009581654268396592,
+      "bootstrap_95_low": 8.492489100265012e-05,
+      "bootstrap_95_high": 0.0017945690669524692
+    }
+  }
+}

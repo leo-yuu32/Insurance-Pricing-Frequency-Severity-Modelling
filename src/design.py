@@ -21,6 +21,10 @@ BANDS = {
     "VehPowerCoarse": ("VehPower", [3, 5, 8, 99]),
 }
 BONUS_MALUS_CAP = 150.0
+# The French bonus-malus coefficient starts at 100 and is multiplied by 0.95 (truncated) after each
+# claim-free year, down to a floor of 50. These are the values a driver with no at-fault claim can hold.
+# Any other value below 100 can only be reached through a claim (each one multiplies by 1.25).
+CLAIM_FREE_LADDER = [50, 51, 54, 57, 60, 64, 68, 72, 76, 80, 85, 90, 95, 100]
 
 # The baseline frequency GLM. Area is left out because it is a banding of Density.
 FREQUENCY_TERMS = ["DrivAgeBand", "VehAgeBand", "VehPowerBand", "BonusMalusBand", "LogDensity", "VehBrand", "VehGas", "Region"]
@@ -49,6 +53,7 @@ def add_model_columns(df):
         df[name] = pd.cut(df[source], bins=edges, labels=_band_labels(edges)).astype(str)
     df["LogDensity"] = np.log(df["Density"])
     df["BonusMalusCapped"] = df["BonusMalus"].clip(upper=BONUS_MALUS_CAP)
+    df["BonusMalusOffLadder"] = ((df["BonusMalus"] < 100) & ~df["BonusMalus"].isin(CLAIM_FREE_LADDER)).astype(float)
     return df
 
 

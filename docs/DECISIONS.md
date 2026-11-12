@@ -359,3 +359,123 @@ Where the models agree (bins 5 and 6) both are right. Where they disagree, the a
 **Why paired.** Both models are scored on the same policies, and their errors are strongly correlated (a policy with an unlucky claim hurts both). Resampling the pair keeps that correlation, so the interval is for the difference, which is much tighter than comparing two separate intervals.
 
 **What it does and does not cover.** It answers "would this difference survive a different holdout sample?". It does not cover the randomness of the training sample or of the tuning.
+
+---
+
+## Phase 4: explaining the GBM and feeding it back into the GLM
+
+### D22. SHAP on the GBM
+
+**What a SHAP value is.** For one policy, the GBM's prediction on the log scale is a base value plus one number per rating factor. That number is the factor's SHAP value: how much this policy's value of the factor moves its log frequency, averaged over the orders in which the factors could be added. A SHAP value of 0.69 doubles the predicted frequency. A SHAP interaction value splits each pair's joint contribution out of the two main effects, so the prediction becomes main effects plus pairwise terms.
+
+**Setup.** `shap.TreeExplainer` on the tuned GBM. Importance uses 10,000 training rows; interaction values use 2,000 training rows (they cost far more to compute). Both samples are from the **training** data, because the ranking is used to choose GLM terms. The plots in `plots/` use a holdout sample and are for display only. The SHAP values add up to the model's raw prediction to within 1e-14, which checks that the explainer reads the model correctly.
+
+**Importance** (mean absolute SHAP value, log scale):
+
+| `BonusMalus` | `Density` | `DrivAge` | `Region` | `VehGas` | `VehAge` | `VehBrand` | `VehPower` | `Area` |
+|---|---|---|---|---|---|---|---|---|
+| 0.352 | 0.116 | 0.111 | 0.080 | 0.079 | 0.079 | 0.060 | 0.030 | 0.001 |
+
+`BonusMalus` matters three times as much as the next factor. `Area` contributes nothing once `Density` is present, which confirms D11 from the GBM's side.
+
+### D23. The bonus-malus ladder indicator
+
+**Decision.** Offer the GLM one new main-effect term: `BonusMalusOffLadder`, equal to 1 when the score is below 100 and is not one of the claim-free ladder values (D17), and 0 otherwise.
+
+**Where it came from.** The SHAP dependence plot for `BonusMalus` (`plots/shap_dependence_BonusMalus.png`) is not a smooth curve. It has spikes at particular values such as 62, and the spikes are the values that can only be reached through a claim. The GBM had found the rule by which the score is updated. This is a shape effect of one factor, not an interaction, and it is something the GLM's bands cannot see because each band mixes ladder and off-ladder values.
+
+**Evidence on the training data.** One extra parameter reduces the 4-fold cross-validated deviance from 0.455363 to 0.451617, a reduction of 0.003746. No interaction candidate comes within a quarter of that (D24). The likelihood-ratio statistic is 1,059 on one degree of freedom.
+
+**What the fitted model says.** A policy off the ladder has 2.21 times the claim frequency of a policy in the same band on the ladder (coefficient 0.791, standard error 0.024). With the indicator in the model the band relativities also become a smooth, increasing curve, where before they were distorted by the mix:
+
+| `BonusMalus` band | 50 | 51-54 | 55-64 | 65-79 | 80-94 | 95-99 | 100 | 101-119 | 120+ |
+|---|---|---|---|---|---|---|---|---|---|
+| Relativity without the indicator | 1.00 | 1.31 | 2.22 | 2.33 | 2.57 | 3.39 | 4.68 | 7.03 | 9.66 |
+| Relativity with the indicator | 1.00 | 0.99 | 1.40 | 1.67 | 2.17 | 2.97 | 4.21 | 6.39 | 8.75 |
+
+**Scope note.** CLAUDE.md's Phase 4 asks for interactions. This term is not one, but it comes from the same step (explaining the GBM) and is selected by the same criterion (cross-validation on training data). The results below report the interaction on its own, the indicator on its own and both together, so each can be judged separately.
+
+### D24. Choosing the interaction
+
+**Candidates.** Pairs of factors ranked by mean absolute SHAP interaction value on the training sample:
+
+| Pair | SHAP interaction strength |
+|---|---|
+| `DrivAge` and `BonusMalus` | 0.082 |
+| `BonusMalus` and `Region` | 0.051 |
+| `BonusMalus` and `VehBrand` | 0.051 |
+| `BonusMalus` and `Density` | 0.037 |
+| `VehAge` and `BonusMalus` | 0.028 |
+| `VehAge` and `VehBrand` | 0.023 |
+
+Every one of the top five involves `BonusMalus`.
+
+**Banding inside interactions.** A factor taking part in an interaction uses coarse bands, each a merge of its fine bands: driver age 18-25, 26-40, 41+; bonus-malus 50, 51-99, 100+; vehicle age 0-1, 2-12, 13+; vehicle power 4-5, 6-8, 9+. The main effects keep their fine bands. This keeps the number of extra parameters small and every cell populated. Candidates needing more than 50 extra parameters are excluded as unusable rating terms (none of the top five did).
+
+**Selection.** Each candidate was added to the GLM and scored by 4-fold cross-validated Poisson deviance on the training data. The baseline is 0.455363.
+
+| Interaction added | Extra parameters | CV deviance reduction | LR statistic |
+|---|---|---|---|
+| `BonusMalus` (3 bands) by `Region` | 42 | 0.000877 | 323 |
+| `BonusMalus` (3 bands) by `VehBrand` | 20 | 0.000549 | 197 |
+| `DrivAge` (3 bands) by `BonusMalus` (3 bands) | 4 | 0.000541 | 164 |
+| `VehAge` (3 bands) by `BonusMalus` (3 bands) | 4 | 0.000290 | 96 |
+| `BonusMalus` (3 bands) by log(`Density`) | 2 | 0.000265 | 77 |
+
+**Chosen: `BonusMalus` by `Region`**, the largest reduction in cross-validated deviance. The same interaction is also the best one when the ladder indicator is already in the model (reduction 0.000860).
+
+**Why the likelihood-ratio test is only supporting evidence.** Every candidate has a p-value below 1e-16. With 535,000 rows that is what happens to any real effect however small, so the test cannot rank the candidates or say whether one is worth its parameters. Cross-validated deviance measures what matters: whether the term improves predictions on policies it was not fitted to.
+
+**A judgement call to review.** By the stated criterion the choice is `BonusMalus` by `Region`. It costs 42 parameters, and its meaning (the bonus-malus gradient is flatter in some regions, for example around Paris and the south-east) is less intuitive than driver age by bonus-malus, which has the strongest SHAP interaction, needs 4 parameters and gets 62% of the cross-validated gain. A pricing team might well prefer the smaller term. I followed the criterion and did not look at the holdout for the alternative. Note also that the driver age by bonus-malus gain falls from 0.00054 to 0.00021 once the ladder indicator is in the model: part of what looked like that interaction was the ladder effect.
+
+### D25. The additive GBM
+
+**Decision.** A second GBM in which every tree may split on one factor only (`interaction_constraints`, one group per feature). Its prediction is then a sum of one-factor effects on the log scale: the same structure as a GLM with no interactions, but with completely flexible shapes. It was tuned by the same 30-trial protocol (chosen: learning rate 0.1095, 11 leaves, 418 trees; CV deviance 0.450151). A test checks that the fitted model has no interactions.
+
+**What it is for.** It splits the gap between the GLM and the GBM in two:
+
+- GLM to additive GBM: what the GLM loses through banding and straight-line terms (shape).
+- Additive GBM to GBM: what it loses by having no interactions.
+
+The split is approximate, because the three models also differ in how they are regularised.
+
+### D26. Results on the holdout
+
+| Model | Parameters | Poisson deviance | Deviance explained | Gini | Actual / expected |
+|---|---|---|---|---|---|
+| GLM | 63 | 0.45391 | 4.85% | 0.297 | 1.000 |
+| GLM + interaction | 105 | 0.45339 | 4.96% | 0.298 | 1.000 |
+| GLM + ladder indicator | 64 | 0.44991 | 5.69% | 0.315 | 1.001 |
+| GLM + ladder indicator + interaction | 106 | 0.44940 | 5.79% | 0.316 | 1.001 |
+| Additive GBM | | 0.44876 | 5.93% | 0.319 | 1.002 |
+| GBM, `BonusMalus` constrained | | 0.45106 | 5.44% | 0.310 | 0.999 |
+| GBM | | 0.44780 | 6.13% | 0.320 | 1.000 |
+
+**Where the gap comes from.** The GLM-to-GBM gap is 0.00611 of deviance.
+
+| Part of the gap | Deviance | Share | 95% bootstrap interval |
+|---|---|---|---|
+| Shape: GLM to additive GBM | 0.00515 | 84% | 0.00411 to 0.00624 |
+| Interactions: additive GBM to GBM | 0.00096 | 16% | 0.00008 to 0.00179 |
+
+Five sixths of what the GBM gains over the GLM is the shape of single factors, not interactions.
+
+**How much each GLM extension closes.**
+
+| Extension | Deviance reduction from the GLM | 95% bootstrap interval | Share of gap closed (deviance) | Share of gap closed (Gini) |
+|---|---|---|---|---|
+| Interaction (`BonusMalus` by `Region`) | 0.00052 | -0.00001 to 0.00101 | 8% | 7% |
+| Ladder indicator | 0.00400 | 0.00313 to 0.00486 | 66% | 79% |
+| Both | 0.00451 | 0.00356 to 0.00558 | 74% | 82% |
+
+Against the right denominators: the interaction closes 54% of the interaction portion (0.00052 of 0.00096), and the ladder indicator closes 78% of the shape portion (0.00400 of 0.00515).
+
+**How to state the result.**
+
+- The one interaction selected from the SHAP analysis closes 8% of the gap, and its interval just includes zero, so on this holdout it cannot be claimed as a significant improvement. That is consistent with interactions being only 16% of the gap to begin with.
+- One extra parameter that encodes how the bonus-malus score is updated closes two thirds of the gap. The GLM with that term (64 parameters, deviance 0.44991) is ahead of the monotone-constrained GBM (0.45106).
+- With both terms the GLM reaches 0.44940. The remaining distance to the GBM is 0.00159 (interval 0.00051 to 0.00270): the GBM is still better, by about a quarter of the original gap.
+
+**What this says about the trade-off.** The GBM's advantage here was not mainly "non-linearity and interactions" in general. Most of it was one specific piece of structure that a person can read off a SHAP dependence plot and write down as a rating factor. The GBM was useful as a way of finding it, and a pricing team that needs a GLM can keep most of the benefit.
+
+**Pure premium (secondary).** Gini on capped losses, with the shared severity model: GLM 0.335, GLM + ladder indicator 0.348, GBM 0.348.
