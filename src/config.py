@@ -122,3 +122,10 @@ ACTUARIAL_LOADINGS = {
 
 # Flag to enable/disable actuarial loadings
 ENABLE_ACTUARIAL_LOADINGS = True
+
+# ============================================================================
+# REBUILT PIPELINE (data.py, design.py, glm.py, metrics.py, gbm.py)
+# ============================================================================
+# Everything above this line belongs to the legacy scikit-learn pipeline.
+# The one seed used by every random step in the rebuilt pipeline.
+SEED = 42

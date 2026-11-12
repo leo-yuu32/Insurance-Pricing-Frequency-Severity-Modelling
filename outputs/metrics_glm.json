@@ -1,0 +1,113 @@
+{
+  "data": {
+    "policies": 668626,
+    "train_policies": 534900,
+    "holdout_policies": 133726,
+    "train_exposure": 282733.01660753053,
+    "holdout_exposure": 70826.91142375927,
+    "train_claims": 20883,
+    "holdout_claims": 5215,
+    "train_frequency": 0.07386120040231547,
+    "holdout_frequency": 0.07363020489201509,
+    "large_loss_cap": 181270.8340000013,
+    "train_claims_capped": 21,
+    "train_loss": 49052678.83,
+    "holdout_loss": 10207798.67,
+    "train_loss_capped": 41162372.32400003,
+    "holdout_loss_capped": 10004000.716000006,
+    "large_loss_load": 1.1916873605800282,
+    "largest_train_claim_share_of_train_loss": 0.0830821202267864
+  },
+  "glm": {
+    "frequency_parameters": 63,
+    "severity_parameters": 10,
+    "frequency_rebalance_factor": 0.9999999999999976,
+    "pure_premium_rebalance_factor": 1.0017103974052457,
+    "severity_dispersion_pearson": 13.012239930283002,
+    "train_frequency_deviance": 0.45467686618913944,
+    "holdout": {
+      "frequency": {
+        "poisson_deviance": 0.4539109005143823,
+        "null_deviance": 0.4770300891687389,
+        "deviance_explained": 0.04846484357966496,
+        "gini": 0.2965680674439375,
+        "a_over_e": 0.9997200508997106
+      },
+      "frequency_a_over_e_by_factor": {
+        "DrivAgeBand": {
+          "18-19": 0.8776,
+          "20-21": 0.9547,
+          "22-23": 0.9973,
+          "24-25": 0.9818,
+          "26-30": 1.0285,
+          "31-40": 0.9852,
+          "41-50": 0.9924,
+          "51-60": 1.0047,
+          "61-75": 1.0477,
+          "76+": 0.9594
+        },
+        "BonusMalusBand": {
+          "100": 0.9772,
+          "101-119": 0.9895,
+          "120+": 1.0574,
+          "50": 1.0073,
+          "51-54": 0.992,
+          "55-64": 1.0094,
+          "65-79": 1.1023,
+          "80-94": 0.9097,
+          "95-99": 0.7986
+        },
+        "VehAgeBand": {
+          "0-1": 1.0288,
+          "13-17": 0.9829,
+          "18+": 0.9997,
+          "2-5": 1.0756,
+          "6-12": 0.9442
+        },
+        "VehPowerBand": {
+          "10": 0.9961,
+          "11": 0.9257,
+          "12+": 0.9901,
+          "4": 0.9355,
+          "5": 1.0013,
+          "6": 0.9604,
+          "7": 1.0546,
+          "8": 1.011,
+          "9": 1.2094
+        },
+        "Area": {
+          "A": 1.0434,
+          "B": 1.0274,
+          "C": 1.0007,
+          "D": 1.0091,
+          "E": 0.9656,
+          "F": 0.9088
+        },
+        "VehBrand": {
+          "B1": 1.0259,
+          "B10": 1.0258,
+          "B11": 1.0061,
+          "B12": 1.0024,
+          "B13": 0.9216,
+          "B14": 0.4179,
+          "B2": 0.9713,
+          "B3": 1.0123,
+          "B4": 0.9907,
+          "B5": 1.0566,
+          "B6": 0.9912
+        },
+        "VehGas": {
+          "Diesel": 1.0017,
+          "Regular": 0.9977
+        }
+      },
+      "pure_premium": {
+        "a_over_e_capped_losses": 0.9753812346914887,
+        "a_over_e_all_losses_after_large_loss_load": 0.835161459408423,
+        "gini_capped_losses": 0.3351129028550457,
+        "gini_all_losses": 0.341177218864414,
+        "gini_excluding_largest_policy": 0.3220695581602062
+      }
+    }
+  }
+}
