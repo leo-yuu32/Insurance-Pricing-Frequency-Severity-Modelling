@@ -479,3 +479,56 @@ Against the right denominators: the interaction closes 54% of the interaction po
 **What this says about the trade-off.** The GBM's advantage here was not mainly "non-linearity and interactions" in general. Most of it was one specific piece of structure that a person can read off a SHAP dependence plot and write down as a rating factor. The GBM was useful as a way of finding it, and a pricing team that needs a GLM can keep most of the benefit.
 
 **Pure premium (secondary).** Gini on capped losses, with the shared severity model: GLM 0.335, GLM + ladder indicator 0.348, GBM 0.348.
+
+---
+
+## Phase 2: the from-scratch NumPy solver
+
+### D27. What it is, and what it is not
+
+**Decision.** `src/irls.py` is a GLM solver written with NumPy only. It fits the two models the pipeline uses: Poisson with a log link and an offset, and Gamma with a log link and prior weights. It is **not** the pipeline's engine; statsmodels is. Its job is to show that the fitting algorithm is understood, by reproducing the statsmodels results on the pipeline's own design matrices.
+
+**The algorithm.** With a log link, `eta = X beta + offset` and `mu = exp(eta)`, so `d mu / d eta = mu`. Each iteration:
+
+1. Working response: `z = (eta - offset) + (y - mu) / mu`. This is the linear predictor plus the residual moved onto the linear scale. The offset is taken out because it has no coefficient to estimate.
+2. Working weights: `W = w * (d mu / d eta)^2 / V(mu)`, where `w` is the prior weight and `V` is the variance function.
+   - Poisson, `V(mu) = mu`: `W = w * mu`.
+   - Gamma, `V(mu) = mu^2`: `W = w`. The weights do not change between iterations.
+3. Weighted least squares: `beta = (X' W X)^-1 X' W z`.
+
+Iteration stops when the deviance changes by less than 1e-10 in relative terms. Starting values are fitted means halfway between each observation and the overall mean, so that `log(mu)` is defined when `y = 0`.
+
+**After convergence.** The covariance of the coefficients is `phi * (X' W X)^-1`. The dispersion `phi` is 1 for Poisson. For Gamma it is the Pearson chi-squared statistic over the residual degrees of freedom, `sum( w (y - mu)^2 / mu^2 ) / (n - p)`, which is the convention statsmodels uses by default.
+
+### D28. IRLS and Newton-Raphson: when they are the same
+
+This is on the CV, so it needs to be exact.
+
+- **Newton-Raphson** updates with the observed information: `beta + (-H)^-1 g`, where `g` is the gradient of the log-likelihood and `H` its Hessian.
+- **Fisher scoring** replaces `-H` with its expectation, the Fisher information `X' W X`.
+- **IRLS is Fisher scoring** written as a weighted regression. Always.
+
+Whether Fisher scoring equals Newton-Raphson depends on the link.
+
+- **Poisson with a log link.** The log link is the canonical link for the Poisson family. The gradient is `X'(y - mu)` and the Hessian is `-X' diag(mu) X`, which does not contain `y`. So the observed and expected information are the same matrix, and IRLS is exactly Newton-Raphson.
+- **Gamma with a log link.** The canonical link for the Gamma family is the inverse, not the log. Up to the dispersion, the log-likelihood is `sum( w (-y / mu - log mu) )`. The gradient is `X' diag(w) (y - mu) / mu`. The observed Hessian is `-X' diag(w y / mu) X`, which does contain `y`. Its expectation, using `E[y] = mu`, is `-X' diag(w) X`. IRLS uses the second, so it is Fisher scoring and not Newton-Raphson. The two take different steps away from the optimum and converge to the same estimate.
+
+`tests/test_irls.py` checks both statements numerically: for Poisson, one IRLS step equals one hand-written Newton step to 1e-10; for Gamma, the IRLS step equals the Fisher scoring step, differs from the Newton step, and both iterations end at the same coefficients.
+
+**The accurate CV wording** is "fitted by IRLS (equivalent to Newton-Raphson under the canonical link)", which is what the CV already says. It would be wrong to say the Gamma severity model is fitted by Newton-Raphson.
+
+### D29. Validation against statsmodels
+
+Seven tests in `tests/test_irls.py`. The tolerance in the tests is a relative 1e-6 with an absolute 1e-8 (a relative tolerance alone fails for a coefficient that is close to zero). What was achieved:
+
+| | Frequency GLM | Severity GLM |
+|---|---|---|
+| Design matrix | 534,900 by 63 | 19,721 by 10 |
+| Largest coefficient difference, absolute | 2.9e-14 | 6.6e-14 |
+| Largest coefficient difference, relative | 2.6e-12 | 1.1e-12 |
+| Largest standard error difference, relative | 4.4e-9 | 6.2e-14 |
+| Deviance difference | 1.5e-11 (of 128,552) | 3.6e-12 |
+| Dispersion | 1 (fixed) | 13.0122399303 in both |
+| Iterations, NumPy and statsmodels | 7 and 7 | 7 and 9 |
+
+The other tests use synthetic data with known coefficients, for both families: the solver matches statsmodels and recovers the true values to within four standard errors.
