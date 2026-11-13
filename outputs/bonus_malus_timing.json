@@ -1,0 +1,712 @@
+{
+  "rows": "training rows only",
+  "policies": 534900,
+  "one_surcharge_above_ladder": [
+    62,
+    63,
+    67,
+    71,
+    75,
+    106,
+    112,
+    118,
+    125
+  ],
+  "off_ladder_share": {
+    "policies_with_a_claim": 0.17823639774859287,
+    "policies_without_a_claim": 0.07935300157809227,
+    "off_ladder_policies_with_no_claim": 0.9208262005586089
+  },
+  "by_exposure_class_below_100": [
+    {
+      "ExposureClass": "full year",
+      "OffLadder": false,
+      "policies": 122511,
+      "exposure": 122511.0,
+      "claims": 4902,
+      "share_with_claim": 0.038869979,
+      "frequency": 0.0400127336
+    },
+    {
+      "ExposureClass": "full year",
+      "OffLadder": true,
+      "policies": 9644,
+      "exposure": 9644.0,
+      "claims": 1916,
+      "share_with_claim": 0.1840522605,
+      "frequency": 0.1986727499
+    },
+    {
+      "ExposureClass": "half to one year",
+      "OffLadder": false,
+      "policies": 115589,
+      "exposure": 82517.17,
+      "claims": 5498,
+      "share_with_claim": 0.0446841828,
+      "frequency": 0.0666285574
+    },
+    {
+      "ExposureClass": "half to one year",
+      "OffLadder": true,
+      "policies": 11275,
+      "exposure": 7964.39,
+      "claims": 1135,
+      "share_with_claim": 0.0945454545,
+      "frequency": 0.1425093447
+    },
+    {
+      "ExposureClass": "under half a year",
+      "OffLadder": false,
+      "policies": 230749,
+      "exposure": 47428.4730226813,
+      "claims": 4676,
+      "share_with_claim": 0.0190943406,
+      "frequency": 0.098590566
+    },
+    {
+      "ExposureClass": "under half a year",
+      "OffLadder": true,
+      "policies": 23477,
+      "exposure": 4893.866531926,
+      "claims": 702,
+      "share_with_claim": 0.0287089492,
+      "frequency": 0.1434448601
+    }
+  ],
+  "glm_off_ladder_relativity_by_exposure_class": {
+    "OffLadder[full year]": 3.8616357567065562,
+    "OffLadder[half to one year]": 1.8599010947150498,
+    "OffLadder[under half a year]": 1.3251161277833359
+  },
+  "full_year_records_by_value": [
+    {
+      "ValueGroup": "50",
+      "policies": 96733,
+      "exposure": 96733.0,
+      "claims": 3548,
+      "share_with_claim": 0.0358305852,
+      "frequency": 0.0366782794
+    },
+    {
+      "ValueGroup": "51, 54, 57 (claim-free values next to 50)",
+      "policies": 9177,
+      "exposure": 9177.0,
+      "claims": 286,
+      "share_with_claim": 0.0298572518,
+      "frequency": 0.0311648687
+    },
+    {
+      "ValueGroup": "52 (three renewals later)",
+      "policies": 1135,
+      "exposure": 1135.0,
+      "claims": 104,
+      "share_with_claim": 0.0863436123,
+      "frequency": 0.0916299559
+    },
+    {
+      "ValueGroup": "55 (two renewals later)",
+      "policies": 1223,
+      "exposure": 1223.0,
+      "claims": 146,
+      "share_with_claim": 0.1128372854,
+      "frequency": 0.1193785773
+    },
+    {
+      "ValueGroup": "58 (one renewal later)",
+      "policies": 1206,
+      "exposure": 1206.0,
+      "claims": 258,
+      "share_with_claim": 0.2006633499,
+      "frequency": 0.2139303483
+    },
+    {
+      "ValueGroup": "62 (surcharged at the last renewal)",
+      "policies": 1326,
+      "exposure": 1326.0,
+      "claims": 449,
+      "share_with_claim": 0.3167420814,
+      "frequency": 0.338612368
+    },
+    {
+      "ValueGroup": "one surcharge above another claim-free value",
+      "policies": 1997,
+      "exposure": 1997.0,
+      "claims": 562,
+      "share_with_claim": 0.2679018528,
+      "frequency": 0.2814221332
+    },
+    {
+      "ValueGroup": "other",
+      "policies": 20615,
+      "exposure": 20615.0,
+      "claims": 1904,
+      "share_with_claim": 0.0854717439,
+      "frequency": 0.0923599321
+    }
+  ],
+  "by_idpol_block_and_value": [
+    {
+      "IDpolBlock": "1 (IDpol from 24,952)",
+      "ValueGroup": "50",
+      "policies": 36620,
+      "exposure": 24640.8387364324,
+      "claims": 1437,
+      "share_with_claim": 0.0381758602,
+      "frequency": 0.0583178201
+    },
+    {
+      "IDpolBlock": "1 (IDpol from 24,952)",
+      "ValueGroup": "51, 54, 57 (claim-free values next to 50)",
+      "policies": 5286,
+      "exposure": 3166.5078366644,
+      "claims": 176,
+      "share_with_claim": 0.0315928869,
+      "frequency": 0.0555817352
+    },
+    {
+      "IDpolBlock": "1 (IDpol from 24,952)",
+      "ValueGroup": "52 (three renewals later)",
+      "policies": 508,
+      "exposure": 309.6782513661,
+      "claims": 49,
+      "share_with_claim": 0.0905511811,
+      "frequency": 0.1582287416
+    },
+    {
+      "IDpolBlock": "1 (IDpol from 24,952)",
+      "ValueGroup": "55 (two renewals later)",
+      "policies": 544,
+      "exposure": 324.7245901639,
+      "claims": 49,
+      "share_with_claim": 0.0882352941,
+      "frequency": 0.1508971032
+    },
+    {
+      "IDpolBlock": "1 (IDpol from 24,952)",
+      "ValueGroup": "58 (one renewal later)",
+      "policies": 596,
+      "exposure": 372.7263934426,
+      "claims": 59,
+      "share_with_claim": 0.0989932886,
+      "frequency": 0.1582930563
+    },
+    {
+      "IDpolBlock": "1 (IDpol from 24,952)",
+      "ValueGroup": "62 (surcharged at the last renewal)",
+      "policies": 762,
+      "exposure": 463.8373770492,
+      "claims": 154,
+      "share_with_claim": 0.1902887139,
+      "frequency": 0.3320129158
+    },
+    {
+      "IDpolBlock": "1 (IDpol from 24,952)",
+      "ValueGroup": "one surcharge above another claim-free value",
+      "policies": 1710,
+      "exposure": 899.1020518003,
+      "claims": 280,
+      "share_with_claim": 0.1573099415,
+      "frequency": 0.311421823
+    },
+    {
+      "IDpolBlock": "2 (IDpol from 1,010,420)",
+      "ValueGroup": "50",
+      "policies": 39415,
+      "exposure": 27652.5605479452,
+      "claims": 1486,
+      "share_with_claim": 0.0365850565,
+      "frequency": 0.0537382423
+    },
+    {
+      "IDpolBlock": "2 (IDpol from 1,010,420)",
+      "ValueGroup": "51, 54, 57 (claim-free values next to 50)",
+      "policies": 5179,
+      "exposure": 3214.4446575342,
+      "claims": 169,
+      "share_with_claim": 0.0320525198,
+      "frequency": 0.052575178
+    },
+    {
+      "IDpolBlock": "2 (IDpol from 1,010,420)",
+      "ValueGroup": "52 (three renewals later)",
+      "policies": 484,
+      "exposure": 333.9764383562,
+      "claims": 58,
+      "share_with_claim": 0.1115702479,
+      "frequency": 0.1736649456
+    },
+    {
+      "IDpolBlock": "2 (IDpol from 1,010,420)",
+      "ValueGroup": "55 (two renewals later)",
+      "policies": 579,
+      "exposure": 392.4064383562,
+      "claims": 54,
+      "share_with_claim": 0.0898100173,
+      "frequency": 0.137612421
+    },
+    {
+      "IDpolBlock": "2 (IDpol from 1,010,420)",
+      "ValueGroup": "58 (one renewal later)",
+      "policies": 606,
+      "exposure": 398.7628767123,
+      "claims": 95,
+      "share_with_claim": 0.1468646865,
+      "frequency": 0.2382368208
+    },
+    {
+      "IDpolBlock": "2 (IDpol from 1,010,420)",
+      "ValueGroup": "62 (surcharged at the last renewal)",
+      "policies": 716,
+      "exposure": 427.6991780822,
+      "claims": 139,
+      "share_with_claim": 0.1801675978,
+      "frequency": 0.3249947793
+    },
+    {
+      "IDpolBlock": "2 (IDpol from 1,010,420)",
+      "ValueGroup": "one surcharge above another claim-free value",
+      "policies": 1664,
+      "exposure": 918.2267123288,
+      "claims": 282,
+      "share_with_claim": 0.15625,
+      "frequency": 0.3071136967
+    },
+    {
+      "IDpolBlock": "3 (IDpol from 1,173,090)",
+      "ValueGroup": "50",
+      "policies": 37291,
+      "exposure": 24352.9380821918,
+      "claims": 1273,
+      "share_with_claim": 0.0324206913,
+      "frequency": 0.0522729535
+    },
+    {
+      "IDpolBlock": "3 (IDpol from 1,173,090)",
+      "ValueGroup": "51, 54, 57 (claim-free values next to 50)",
+      "policies": 4947,
+      "exposure": 2952.6916438356,
+      "claims": 160,
+      "share_with_claim": 0.0293106933,
+      "frequency": 0.054187846
+    },
+    {
+      "IDpolBlock": "3 (IDpol from 1,173,090)",
+      "ValueGroup": "52 (three renewals later)",
+      "policies": 516,
+      "exposure": 347.9609589041,
+      "claims": 25,
+      "share_with_claim": 0.0445736434,
+      "frequency": 0.0718471408
+    },
+    {
+      "IDpolBlock": "3 (IDpol from 1,173,090)",
+      "ValueGroup": "55 (two renewals later)",
+      "policies": 635,
+      "exposure": 405.0673972603,
+      "claims": 62,
+      "share_with_claim": 0.0913385827,
+      "frequency": 0.1530609484
+    },
+    {
+      "IDpolBlock": "3 (IDpol from 1,173,090)",
+      "ValueGroup": "58 (one renewal later)",
+      "policies": 588,
+      "exposure": 363.61,
+      "claims": 62,
+      "share_with_claim": 0.0986394558,
+      "frequency": 0.1705123621
+    },
+    {
+      "IDpolBlock": "3 (IDpol from 1,173,090)",
+      "ValueGroup": "62 (surcharged at the last renewal)",
+      "policies": 797,
+      "exposure": 483.3220547945,
+      "claims": 115,
+      "share_with_claim": 0.1342534504,
+      "frequency": 0.2379365867
+    },
+    {
+      "IDpolBlock": "3 (IDpol from 1,173,090)",
+      "ValueGroup": "one surcharge above another claim-free value",
+      "policies": 1650,
+      "exposure": 844.2704109589,
+      "claims": 163,
+      "share_with_claim": 0.0927272727,
+      "frequency": 0.1930661052
+    },
+    {
+      "IDpolBlock": "4 (IDpol from 2,120,013)",
+      "ValueGroup": "50",
+      "policies": 34058,
+      "exposure": 18494.3095890411,
+      "claims": 928,
+      "share_with_claim": 0.0259850843,
+      "frequency": 0.0501775963
+    },
+    {
+      "IDpolBlock": "4 (IDpol from 2,120,013)",
+      "ValueGroup": "51, 54, 57 (claim-free values next to 50)",
+      "policies": 5688,
+      "exposure": 2500.894109589,
+      "claims": 132,
+      "share_with_claim": 0.0221518987,
+      "frequency": 0.0527811232
+    },
+    {
+      "IDpolBlock": "4 (IDpol from 2,120,013)",
+      "ValueGroup": "52 (three renewals later)",
+      "policies": 516,
+      "exposure": 260.5054794521,
+      "claims": 14,
+      "share_with_claim": 0.0271317829,
+      "frequency": 0.0537416719
+    },
+    {
+      "IDpolBlock": "4 (IDpol from 2,120,013)",
+      "ValueGroup": "55 (two renewals later)",
+      "policies": 603,
+      "exposure": 301.1936986301,
+      "claims": 39,
+      "share_with_claim": 0.0613598673,
+      "frequency": 0.1294847806
+    },
+    {
+      "IDpolBlock": "4 (IDpol from 2,120,013)",
+      "ValueGroup": "58 (one renewal later)",
+      "policies": 701,
+      "exposure": 335.5219178082,
+      "claims": 63,
+      "share_with_claim": 0.0870185449,
+      "frequency": 0.1877671671
+    },
+    {
+      "IDpolBlock": "4 (IDpol from 2,120,013)",
+      "ValueGroup": "62 (surcharged at the last renewal)",
+      "policies": 876,
+      "exposure": 418.0146575342,
+      "claims": 83,
+      "share_with_claim": 0.0856164384,
+      "frequency": 0.1985576307
+    },
+    {
+      "IDpolBlock": "4 (IDpol from 2,120,013)",
+      "ValueGroup": "one surcharge above another claim-free value",
+      "policies": 1424,
+      "exposure": 590.5938356164,
+      "claims": 118,
+      "share_with_claim": 0.0793539326,
+      "frequency": 0.1997989022
+    },
+    {
+      "IDpolBlock": "5 (IDpol from 2,276,662)",
+      "ValueGroup": "50",
+      "policies": 38067,
+      "exposure": 21846.6082191781,
+      "claims": 1047,
+      "share_with_claim": 0.026033047,
+      "frequency": 0.0479250596
+    },
+    {
+      "IDpolBlock": "5 (IDpol from 2,276,662)",
+      "ValueGroup": "51, 54, 57 (claim-free values next to 50)",
+      "policies": 5043,
+      "exposure": 2403.1373972603,
+      "claims": 120,
+      "share_with_claim": 0.0226055919,
+      "frequency": 0.0499347229
+    },
+    {
+      "IDpolBlock": "5 (IDpol from 2,276,662)",
+      "ValueGroup": "52 (three renewals later)",
+      "policies": 481,
+      "exposure": 278.9591780822,
+      "claims": 21,
+      "share_with_claim": 0.0395010395,
+      "frequency": 0.0752798318
+    },
+    {
+      "IDpolBlock": "5 (IDpol from 2,276,662)",
+      "ValueGroup": "55 (two renewals later)",
+      "policies": 557,
+      "exposure": 289.9401369863,
+      "claims": 14,
+      "share_with_claim": 0.0251346499,
+      "frequency": 0.0482858294
+    },
+    {
+      "IDpolBlock": "5 (IDpol from 2,276,662)",
+      "ValueGroup": "58 (one renewal later)",
+      "policies": 602,
+      "exposure": 310.1836986301,
+      "claims": 63,
+      "share_with_claim": 0.096345515,
+      "frequency": 0.203105451
+    },
+    {
+      "IDpolBlock": "5 (IDpol from 2,276,662)",
+      "ValueGroup": "62 (surcharged at the last renewal)",
+      "policies": 682,
+      "exposure": 341.5201369863,
+      "claims": 104,
+      "share_with_claim": 0.142228739,
+      "frequency": 0.304520843
+    },
+    {
+      "IDpolBlock": "5 (IDpol from 2,276,662)",
+      "ValueGroup": "one surcharge above another claim-free value",
+      "policies": 1558,
+      "exposure": 729.5239726027,
+      "claims": 183,
+      "share_with_claim": 0.1084724005,
+      "frequency": 0.2508485079
+    },
+    {
+      "IDpolBlock": "6 (IDpol from 3,143,026)",
+      "ValueGroup": "50",
+      "policies": 36667,
+      "exposure": 17296.7893367767,
+      "claims": 853,
+      "share_with_claim": 0.0221179807,
+      "frequency": 0.0493155107
+    },
+    {
+      "IDpolBlock": "6 (IDpol from 3,143,026)",
+      "ValueGroup": "51, 54, 57 (claim-free values next to 50)",
+      "policies": 5210,
+      "exposure": 1920.8820967138,
+      "claims": 105,
+      "share_with_claim": 0.0197696737,
+      "frequency": 0.0546623867
+    },
+    {
+      "IDpolBlock": "6 (IDpol from 3,143,026)",
+      "ValueGroup": "52 (three renewals later)",
+      "policies": 442,
+      "exposure": 190.7536761734,
+      "claims": 10,
+      "share_with_claim": 0.020361991,
+      "frequency": 0.0524236293
+    },
+    {
+      "IDpolBlock": "6 (IDpol from 3,143,026)",
+      "ValueGroup": "55 (two renewals later)",
+      "policies": 530,
+      "exposure": 222.6000995584,
+      "claims": 11,
+      "share_with_claim": 0.020754717,
+      "frequency": 0.0494159707
+    },
+    {
+      "IDpolBlock": "6 (IDpol from 3,143,026)",
+      "ValueGroup": "58 (one renewal later)",
+      "policies": 643,
+      "exposure": 242.3883486788,
+      "claims": 49,
+      "share_with_claim": 0.0746500778,
+      "frequency": 0.2021549314
+    },
+    {
+      "IDpolBlock": "6 (IDpol from 3,143,026)",
+      "ValueGroup": "62 (surcharged at the last renewal)",
+      "policies": 728,
+      "exposure": 278.8173822891,
+      "claims": 74,
+      "share_with_claim": 0.0961538462,
+      "frequency": 0.2654066952
+    },
+    {
+      "IDpolBlock": "6 (IDpol from 3,143,026)",
+      "ValueGroup": "one surcharge above another claim-free value",
+      "policies": 1491,
+      "exposure": 591.3021019537,
+      "claims": 159,
+      "share_with_claim": 0.0985915493,
+      "frequency": 0.2688980801
+    },
+    {
+      "IDpolBlock": "7 (IDpol from 4,053,688)",
+      "ValueGroup": "50",
+      "policies": 40948,
+      "exposure": 27278.4281420765,
+      "claims": 1246,
+      "share_with_claim": 0.029354303,
+      "frequency": 0.0456771187
+    },
+    {
+      "IDpolBlock": "7 (IDpol from 4,053,688)",
+      "ValueGroup": "51, 54, 57 (claim-free values next to 50)",
+      "policies": 4489,
+      "exposure": 2623.6186338798,
+      "claims": 119,
+      "share_with_claim": 0.0256181778,
+      "frequency": 0.0453572019
+    },
+    {
+      "IDpolBlock": "7 (IDpol from 4,053,688)",
+      "ValueGroup": "52 (three renewals later)",
+      "policies": 450,
+      "exposure": 287.8845901639,
+      "claims": 21,
+      "share_with_claim": 0.0444444444,
+      "frequency": 0.0729458982
+    },
+    {
+      "IDpolBlock": "7 (IDpol from 4,053,688)",
+      "ValueGroup": "55 (two renewals later)",
+      "policies": 496,
+      "exposure": 317.9791256831,
+      "claims": 12,
+      "share_with_claim": 0.0241935484,
+      "frequency": 0.0377383263
+    },
+    {
+      "IDpolBlock": "7 (IDpol from 4,053,688)",
+      "ValueGroup": "58 (one renewal later)",
+      "policies": 534,
+      "exposure": 336.5646448087,
+      "claims": 29,
+      "share_with_claim": 0.0524344569,
+      "frequency": 0.0861647248
+    },
+    {
+      "IDpolBlock": "7 (IDpol from 4,053,688)",
+      "ValueGroup": "62 (surcharged at the last renewal)",
+      "policies": 584,
+      "exposure": 352.1936612022,
+      "claims": 156,
+      "share_with_claim": 0.2534246575,
+      "frequency": 0.4429381252
+    },
+    {
+      "IDpolBlock": "7 (IDpol from 4,053,688)",
+      "ValueGroup": "one surcharge above another claim-free value",
+      "policies": 1361,
+      "exposure": 753.7537704918,
+      "claims": 195,
+      "share_with_claim": 0.1396032329,
+      "frequency": 0.2587051735
+    },
+    {
+      "IDpolBlock": "8 (IDpol from 4,185,731)",
+      "ValueGroup": "50",
+      "policies": 38953,
+      "exposure": 15519.6306871772,
+      "claims": 805,
+      "share_with_claim": 0.0187662054,
+      "frequency": 0.051869791
+    },
+    {
+      "IDpolBlock": "8 (IDpol from 4,185,731)",
+      "ValueGroup": "51, 54, 57 (claim-free values next to 50)",
+      "policies": 4661,
+      "exposure": 1749.6904034733,
+      "claims": 109,
+      "share_with_claim": 0.0212400772,
+      "frequency": 0.0622967353
+    },
+    {
+      "IDpolBlock": "8 (IDpol from 4,185,731)",
+      "ValueGroup": "52 (three renewals later)",
+      "policies": 371,
+      "exposure": 149.8473972603,
+      "claims": 8,
+      "share_with_claim": 0.0215633423,
+      "frequency": 0.0533876473
+    },
+    {
+      "IDpolBlock": "8 (IDpol from 4,185,731)",
+      "ValueGroup": "55 (two renewals later)",
+      "policies": 500,
+      "exposure": 202.8902739726,
+      "claims": 9,
+      "share_with_claim": 0.018,
+      "frequency": 0.0443589524
+    },
+    {
+      "IDpolBlock": "8 (IDpol from 4,185,731)",
+      "ValueGroup": "58 (one renewal later)",
+      "policies": 515,
+      "exposure": 208.7491780822,
+      "claims": 21,
+      "share_with_claim": 0.0388349515,
+      "frequency": 0.1005991985
+    },
+    {
+      "IDpolBlock": "8 (IDpol from 4,185,731)",
+      "ValueGroup": "62 (surcharged at the last renewal)",
+      "policies": 580,
+      "exposure": 222.1919178082,
+      "claims": 20,
+      "share_with_claim": 0.0310344828,
+      "frequency": 0.090012275
+    },
+    {
+      "IDpolBlock": "8 (IDpol from 4,185,731)",
+      "ValueGroup": "one surcharge above another claim-free value",
+      "policies": 1651,
+      "exposure": 594.1388891384,
+      "claims": 60,
+      "share_with_claim": 0.0339188371,
+      "frequency": 0.1009864883
+    }
+  ],
+  "idpol_blocks": [
+    {
+      "IDpolBlock": "1 (IDpol from 24,952)",
+      "policies": 66863,
+      "mean_exposure": 0.6055575928,
+      "full_year_share": 0.3348937379
+    },
+    {
+      "IDpolBlock": "2 (IDpol from 1,010,420)",
+      "policies": 66862,
+      "mean_exposure": 0.6391302019,
+      "full_year_share": 0.3999730789
+    },
+    {
+      "IDpolBlock": "3 (IDpol from 1,173,090)",
+      "policies": 66863,
+      "mean_exposure": 0.5974867112,
+      "full_year_share": 0.2947968234
+    },
+    {
+      "IDpolBlock": "4 (IDpol from 2,120,013)",
+      "policies": 66862,
+      "mean_exposure": 0.4629380409,
+      "full_year_share": 0.2065149113
+    },
+    {
+      "IDpolBlock": "5 (IDpol from 2,276,662)",
+      "policies": 66862,
+      "mean_exposure": 0.5123073613,
+      "full_year_share": 0.2264066286
+    },
+    {
+      "IDpolBlock": "6 (IDpol from 3,143,026)",
+      "policies": 66863,
+      "mean_exposure": 0.4157291659,
+      "full_year_share": 0.1448932893
+    },
+    {
+      "IDpolBlock": "7 (IDpol from 4,053,688)",
+      "policies": 66862,
+      "mean_exposure": 0.6116264632,
+      "full_year_share": 0.3649756214
+    },
+    {
+      "IDpolBlock": "8 (IDpol from 4,185,731)",
+      "policies": 66863,
+      "mean_exposure": 0.3837999472,
+      "full_year_share": 0.0228676548
+    }
+  ],
+  "cross_validated_deviance": {
+    "null": 0.4792490299514505,
+    "glm": 0.4553629721876282,
+    "glm_without_bonus_malus": 0.4701621445721731,
+    "gbm": 0.4487490965435694,
+    "gbm_without_bonus_malus": 0.4698137364649168,
+    "glm_to_gbm_gap": 0.006613875644058798,
+    "glm_to_gbm_gap_without_bonus_malus": 0.0003484081072562817
+  }
+}

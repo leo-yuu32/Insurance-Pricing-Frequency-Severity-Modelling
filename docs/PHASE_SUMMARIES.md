@@ -2,7 +2,32 @@
 
 Written for Leo's review. Each phase starts with the plan that was followed (plan mode was skipped for this run, at Leo's request), then what changed, the key numbers, and anything surprising. The reasoning behind each choice is in `docs/DECISIONS.md` (entries D1 to D29).
 
-**State of the repo.** Five stacked local branches, nothing pushed, `main` untouched:
+## Review of the five decisions before Phase 5 (13 November 2026): stopped, waiting for Leo
+
+The stop rule applies. The leakage check asked for in decision 3 came back the wrong way, which undoes decision 1 and changes how the headline numbers below can be read. Phase 5 and the CV summary have not been started. The evidence and the options are in `docs/DECISIONS.md`, D30.
+
+| Decision | Verdict | Reason |
+|---|---|---|
+| 1. Final GLM = baseline + ladder indicator, no interaction | **Disagree** on the indicator. Agree on leaving the interaction out and on not scoring driver age by bonus-malus on the holdout. | The indicator leans on a pattern that looks like target leakage (decision 3). One correction to the reasoning on the interaction: dropping it because of its holdout result is itself a holdout-based choice. It is acceptable because it is the conservative direction and all four GLMs stay in the table. |
+| 2. Grouped split, no monotone constraint, CLAUDE.md wordings | Agree on the split and the wordings. **The monotone constraint is reopened.** | D17 dropped the constraint because the bonus-malus sawtooth made it expensive. The sawtooth is now suspect. |
+| 3. Leakage check on the indicator | **Disagree with the conclusion it presupposes.** The check was the right thing to ask for. | The evidence does not show that the 2.2 ratio reflects prior history. It points the other way, and the question applies to `BonusMalus` in every model, not only to the indicator. |
+| 4. Phase 5 | Not started | It depends on which GLM is final. |
+| 5. CV summary | Not started | Same. |
+
+**What the check found** (training rows only, `src/check_bonus_malus_timing.py`):
+
+- The 2.2 relativity is an average of 1.3 in records under half a year, 1.9 in records of half a year to a year, and 3.9 in full-year records.
+- In full-year records, 32% of policies at 62 (one surcharge above 50) have a claim in the year, against 3.6% at 50. A prior claim does not make a driver nine times as likely to claim; a coefficient recorded after the claim does.
+- The bonus-malus value that carries the excess moves with the policy number: no value in the newest eighth of policies, only 62 in the next, then 62 and 58, then 55 and 52 as well in the oldest. A driver characteristic does not behave like that. A coefficient that already reflects the recorded claims does.
+- In cross-validation on the training data, the GLM-to-GBM gap is 0.0066 with `BonusMalus` and 0.0003 without it.
+
+**What this changes.** The 66% "gap closed by one parameter" is not a pricing improvement. Most of the GBM's advantage over the GLM runs through the suspect factor. The level of every Gini and deviance figure is flattered to an unknown degree. The mechanism is not proven; the evidence is circumstantial but consistent.
+
+**My recommendation (option A in D30).** Final GLM = baseline, no indicator, no interaction. Keep the nine-factor results, lead the write-up with this finding, and add one pre-declared comparison without `BonusMalus`, scored once on the holdout. About 45 minutes of compute.
+
+---
+
+**State of the repo.** The review is on a sixth local branch, `bonus-malus-timing-check`, on top of the five below. Five stacked local branches, nothing pushed, `main` untouched:
 
 `phase-0-audit` -> `phase-1-foundations` -> `phase-3-gbm` -> `phase-4-shap-interactions` -> `phase-2-numpy-glm` (the tip, which contains everything).
 
@@ -24,6 +49,8 @@ python -m pytest
 ---
 
 ## Headline
+
+**Read with the review above.** The numbers are correct as computed, but the rows that depend on the bonus-malus sawtooth (the ladder indicator and the unconstrained GBM) cannot be read as pricing improvements until D30 is settled.
 
 Holdout of 133,726 policies, scored once. Poisson deviance per policy-year, lower is better.
 

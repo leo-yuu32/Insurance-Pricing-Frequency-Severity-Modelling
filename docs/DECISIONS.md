@@ -253,6 +253,8 @@ The last figure shows the large-loss problem from the other side: the load of 1.
 
 ### D17. No monotone constraint on `BonusMalus`
 
+**Under review (13 November 2026).** The sawtooth that makes the constraint expensive may be partly a data artefact. See D30.
+
 **Decision.** The primary GBM has no monotone constraint. A constrained version is tuned and reported alongside it, so the cost of the constraint is on record.
 
 **What was expected.** A higher bonus-malus score should mean a higher claim frequency, so an increasing constraint looked like a free way to make the GBM easier to defend.
@@ -379,6 +381,8 @@ Where the models agree (bins 5 and 6) both are right. Where they disagree, the a
 `BonusMalus` matters three times as much as the next factor. `Area` contributes nothing once `Density` is present, which confirms D11 from the GBM's side.
 
 ### D23. The bonus-malus ladder indicator
+
+**Under review (13 November 2026).** D30 gives evidence that the pattern this term picks up is partly the claims being predicted, not prior history. Do not quote this entry without D30.
 
 **Decision.** Offer the GLM one new main-effect term: `BonusMalusOffLadder`, equal to 1 when the score is below 100 and is not one of the claim-free ladder values (D17), and 0 otherwise.
 
@@ -532,3 +536,73 @@ Seven tests in `tests/test_irls.py`. The tolerance in the tests is a relative 1e
 | Iterations, NumPy and statsmodels | 7 and 7 | 7 and 9 |
 
 The other tests use synthetic data with known coefficients, for both families: the solver matches statsmodels and recovers the true values to within four standard errors.
+
+---
+
+## Review before Phase 5
+
+### D30. `BonusMalus` appears to contain the claims it is used to predict (open, waiting for Leo)
+
+**The question.** freMTPL2 does not say when `BonusMalus` was recorded. If it is the coefficient at the start of the exposure period, it is a rating factor. If it was recorded later, a claim in the data can already have moved it, and then it is partly a copy of the answer (target leakage). The ladder indicator (D23) is the term most exposed to this, because "off the claim-free ladder" means exactly "has been surcharged for a claim". Every number below comes from `src/check_bonus_malus_timing.py`, on training rows only, and is saved in `outputs/bonus_malus_timing.json`.
+
+**How the French coefficient moves** (needed to read the tables). It is updated once a year at renewal. A claim-free year multiplies it by 0.95, truncated to two decimals, down to a floor of 0.50. An at-fault claim multiplies it by 1.25. So a driver at 50 who is surcharged goes to 62, and then, claim-free, to 58, 55, 52 and back to 50. Among those four values, the value tells you how many renewals ago the surcharge happened.
+
+**What clean data would look like.** A past claim is a genuine predictor: it says something about the driver. In a credibility model the effect is moderate and fades slowly, a few per cent per claim-free year. It should not depend on how long the policy has been in the insurer's file, and it should be the same whether the record covers a full year or part of one.
+
+**What the data shows.**
+
+1. *The share Leo asked for.* 17.8% of policies with a claim are off the ladder, against 7.9% of policies without one. 92.1% of off-ladder policies have no claim in the period. On its own this fits either reading, so it does not settle the question.
+
+2. *The effect depends on the length of the record.* The single relativity of 2.21 in D23 is an average of three very different numbers.
+
+| Records | Frequency on the ladder | Frequency off the ladder | Ratio | GLM relativity of the indicator |
+|---|---|---|---|---|
+| Under half a year | 0.099 | 0.143 | 1.5 | 1.33 |
+| Half a year to one year | 0.067 | 0.143 | 2.1 | 1.86 |
+| Full year | 0.040 | 0.199 | 5.0 | 3.86 |
+
+3. *In full-year records, a surcharged value is close to a record of a claim in that year.* Share of policies with at least one claim: 3.6% at 50; 3.0% at 51, 54 and 57; 31.7% at 62; 26.8% at the other values one surcharge above a claim-free value (63, 67, 71, 75, 106, 112, 118, 125). A prior claim does not make a driver nine times as likely to claim. A coefficient recorded at the end of the year would produce about this figure by construction: with renewal dates spread over the year, roughly a third of the claims that caused a surcharge at that renewal fall inside the same year. The drivers at 51, 54 and 57 claim less often than the drivers at 50, which is the wrong way round for a rating factor and is what happens if claimants have been moved off those values.
+
+4. *The value that carries the effect moves with the policy number.* This is the strongest evidence. Training policies are cut into eight equal blocks by `IDpol`. `IDpol` appears to follow the order in which policies entered the file (block 8 is 98% part-year records, as new business would be), although that is an inference. Claims per policy-year:
+
+| `IDpol` block | 50 | 62 (surcharged at the last renewal) | 58 (one renewal later) | 55 (two later) | 52 (three later) |
+|---|---|---|---|---|---|
+| 1 (oldest) | 0.058 | 0.332 | 0.158 | 0.151 | 0.158 |
+| 2 | 0.054 | 0.325 | 0.238 | 0.138 | 0.174 |
+| 3 | 0.052 | 0.238 | 0.171 | 0.153 | 0.072 |
+| 4 | 0.050 | 0.199 | 0.188 | 0.129 | 0.054 |
+| 5 | 0.048 | 0.305 | 0.203 | 0.048 | 0.075 |
+| 6 | 0.049 | 0.265 | 0.202 | 0.049 | 0.052 |
+| 7 | 0.046 | 0.443 | 0.086 | 0.038 | 0.073 |
+| 8 (newest) | 0.052 | 0.090 | 0.101 | 0.044 | 0.053 |
+
+The table is a staircase. In the newest block no value is far above 50. One block back, only 62 is. Further back 58 joins, then 55, then 52. Each step back in the file adds one more renewal's worth of surcharge that lines up with a recorded claim. That is what you would see if the claims counted on a policy include the claims that produced its coefficient, and it is not what a driver characteristic does: a claim three renewals ago cannot matter threefold for long-standing policies and not at all for recent ones. The cells are small (between 8 and 62 claims in the lower-right half), so single cells are uncertain; the pattern across 32 cells is not.
+
+Block 8 is the nearest thing to a clean estimate of the genuine effect of a past claim: 1.7 to 1.9 times at 62 and 58, on about 20 claims each, and nothing at 55 and 52.
+
+**What is not established.** The mechanism. A year-end snapshot explains point 3 but not the staircase; the staircase suggests that either claims from more than one year are attached to older policies, or policies were observed in different years and the coefficient was read later. The documentation does not say, and I found no published statement of the problem. The evidence is circumstantial, from the data alone. It is strong enough that the opposite claim, that the 2.2 ratio reflects prior history and not the same claims, cannot be written honestly.
+
+**Why this matters beyond the indicator.** `BonusMalus` is in every model. Cross-validated deviance on the training data, with and without it (the GBM keeps its tuned parameters and is not re-tuned):
+
+| | Null | GLM | GBM | GLM-to-GBM gap |
+|---|---|---|---|---|
+| Nine factors | 0.47925 | 0.45536 | 0.44875 | 0.00661 |
+| Without `BonusMalus` | 0.47925 | 0.47016 | 0.46981 | 0.00035 |
+
+- `BonusMalus` is 62% of what the GLM explains and 69% of what the GBM explains.
+- 95% of the GLM-to-GBM gap exists only when `BonusMalus` is in the models. The GBM uses the raw value and can learn the sawtooth; the GLM's bands blur it. On the holdout the gap is 0.0061 unconstrained and 0.0029 with the monotone constraint, which stops the GBM using the sawtooth.
+- The "66% of the gap closed by one parameter" (D26) is the GLM being taught the same pattern. It is not evidence of a better pricing model.
+- D17 dropped the monotone constraint because the sawtooth made it expensive. If the sawtooth is partly an artefact, that reasoning no longer holds.
+- The level of every Gini and deviance figure is flattered to an unknown degree, the baseline GLM's included.
+
+Not affected: the data cleaning, the split, the metrics, the severity model (driver age only) and the NumPy solver validation.
+
+**I should have caught this in Phase 4.** One parameter closing two thirds of the gap is a result that "looks too good", and CLAUDE.md says to suspect leakage first. D23 described the indicator as marking a past claim without testing whether the claim was past.
+
+**Options.**
+
+- **A. Keep the nine factors, drop the indicator, report both views (recommended).** The final GLM is the baseline. `BonusMalus` stays because every published freMTPL2 comparison uses it and part of its effect is genuine, but the write-up leads with this finding and adds a second, pre-declared comparison without `BonusMalus` (GLM and a GBM tuned for it, scored once on the holdout). The honest statement is then a range: the GBM's advantage is 0.006 with the suspect factor and close to nothing without it. About 45 minutes of compute.
+- **B. Remove `BonusMalus` from every model** and redo Phases 1, 3 and 4. Cleanest, but it discards a real rating factor on circumstantial evidence, and the likely result is that the GBM does not beat the GLM. Three to four hours of compute.
+- **C. Keep the indicator with a one-line caveat**, as first proposed. Not recommended: the indicator is the term that leans hardest on the suspect pattern, and an actuary who knows the French system would ask this question first.
+
+**Status.** No model, result or document outside this entry has been changed. Phase 5 has not started.
