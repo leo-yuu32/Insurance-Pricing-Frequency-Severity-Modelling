@@ -18,7 +18,7 @@ The stop rule applies. The leakage check asked for in decision 3 came back the w
 
 - The 2.2 relativity is an average of 1.3 in records under half a year, 1.9 in records of half a year to a year, and 3.9 in full-year records.
 - In full-year records, 32% of policies at 62 (one surcharge above 50) have a claim in the year, against 3.6% at 50. A prior claim does not make a driver nine times as likely to claim; a coefficient recorded after the claim does.
-- The bonus-malus value that carries the excess moves with the policy number: no value in the newest eighth of policies, only 62 in the next, then 62 and 58, then 55 and 52 as well in the oldest. A driver characteristic does not behave like that. A coefficient that already reflects the recorded claims does.
+- The bonus-malus value that carries the excess moves with the policy number: no value in the newest eighth of policies, only 62 in the next, then 62 and 58, then 55 and 52 as well in the oldest. A driver characteristic does not behave like that. A coefficient that already reflects the recorded claims does. The newest block still shows no excess on part-year records alone, so this is not just a difference in record length (but only 9 claims sit in that cell).
 - In cross-validation on the training data, the GLM-to-GBM gap is 0.0066 with `BonusMalus` and 0.0003 without it.
 
 **What this changes.** The 66% "gap closed by one parameter" is not a pricing improvement. Most of the GBM's advantage over the GLM runs through the suspect factor. The level of every Gini and deviance figure is flattered to an unknown degree. The mechanism is not proven; the evidence is circumstantial but consistent.

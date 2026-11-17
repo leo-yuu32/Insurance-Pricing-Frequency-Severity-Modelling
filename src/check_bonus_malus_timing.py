@@ -133,6 +133,9 @@ def main():
         "glm_off_ladder_relativity_by_exposure_class": indicator_by_exposure_class(train),
         "full_year_records_by_value": as_records(frequency_table(full_year, "ValueGroup")),
         "by_idpol_block_and_value": as_records(frequency_table(train[train["ValueGroup"] != "other"], ["IDpolBlock", "ValueGroup"])),
+        # The newest block is almost all part-year records, so the block pattern is repeated on part-year records alone.
+        "by_idpol_block_and_value_part_year": as_records(frequency_table(
+            train[(train["ValueGroup"] != "other") & (train["ExposureClass"] != "full year")], ["IDpolBlock", "ValueGroup"])),
         "idpol_blocks": as_records(train.groupby("IDpolBlock").agg(policies=("Exposure", "size"), mean_exposure=("Exposure", "mean"),
                                                                    full_year_share=("ExposureClass", lambda s: float((s == "full year").mean())))),
     }
@@ -147,6 +150,10 @@ def main():
     wide = pd.DataFrame(result["by_idpol_block_and_value"]).pivot(index="IDpolBlock", columns="ValueGroup", values="frequency")
     print(wide.round(3).to_string())
     print(pd.DataFrame(result["by_idpol_block_and_value"]).pivot(index="IDpolBlock", columns="ValueGroup", values="claims").to_string())
+    part = pd.DataFrame(result["by_idpol_block_and_value_part_year"])
+    print("part-year records only")
+    print(part.pivot(index="IDpolBlock", columns="ValueGroup", values="frequency").round(3).to_string())
+    print(part.pivot(index="IDpolBlock", columns="ValueGroup", values="claims").to_string())
     print(pd.DataFrame(result["idpol_blocks"]).round(3).to_string(index=False))
     print(json.dumps(result["cross_validated_deviance"], indent=2))
 
