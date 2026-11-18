@@ -1,7 +1,7 @@
 ﻿# Phase 0 audit scripts
 
 These scripts produced every figure in `docs/AUDIT.md`. They only read the repo: they import the
-legacy pipeline in `src/`, run it unmodified, and analyse its output. Large intermediate files are
+legacy pipeline (in `src/` at the time of the audit, now in `legacy/`), run it unmodified, and analyse its output. Large intermediate files are
 cached in the system temp folder (`%TEMP%\mtpl_audit_cache`), not in the repo.
 
 Run from the repo root, in this order (PowerShell):

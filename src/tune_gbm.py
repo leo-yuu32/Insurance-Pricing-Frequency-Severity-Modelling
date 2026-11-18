@@ -7,9 +7,11 @@ Run from the repo root:
     python src/tune_gbm.py             the full GBM
     python src/tune_gbm.py additive    the additive GBM (no interactions)
     python src/tune_gbm.py monotone    the GBM with BonusMalus constrained to be increasing
+    python src/tune_gbm.py final       the final GBM: the eight factors other than BonusMalus
 
-Writes outputs/gbm_tuning.json (or gbm_tuning_additive.json): every trial, and the chosen
-parameters under "best". run_gbm.py reads the chosen parameters from that file.
+Writes outputs/gbm_tuning.json (or gbm_tuning_<variant>.json): every trial, and the chosen
+parameters under "best". run_gbm.py and run_final.py read the chosen parameters from those files.
+Every variant draws the same 30 parameter sets (same seed), so the searches are comparable.
 """
 
 import json
@@ -37,7 +39,10 @@ def sample_params(rng):
 
 def main():
     variant = sys.argv[1] if len(sys.argv) > 1 else ""
+    if variant not in ("", "additive", "monotone", "final"):
+        raise SystemExit(f"unknown variant {variant!r}")
     additive, monotone = variant == "additive", variant == "monotone"
+    features = gbm.FINAL_FEATURES if variant == "final" else gbm.FEATURES
     out_path = OUTPUTS / (f"gbm_tuning_{variant}.json" if variant else "gbm_tuning.json")
     policies, _, _ = data.load_dataset()
     train = policies[~policies["is_holdout"]]
@@ -46,11 +51,12 @@ def main():
     for i in range(N_TRIALS):
         params = sample_params(rng)
         start = time.time()
-        deviance, n_rounds = gbm.cv_score(train, params, additive=additive, monotone=monotone)
+        deviance, n_rounds = gbm.cv_score(train, params, additive=additive, monotone=monotone, features=features)
         trials.append({"trial": i, "params": params, "cv_deviance": deviance, "n_rounds": n_rounds, "seconds": round(time.time() - start, 1)})
         print(trials[-1], flush=True)
         best = min(trials, key=lambda t: t["cv_deviance"])
-        out_path.write_text(json.dumps({"variant": variant or "full", "n_trials_done": len(trials), "best": best, "trials": trials}, indent=2), encoding="utf-8")
+        out_path.write_text(json.dumps({"variant": variant or "full", "features": features, "n_trials_done": len(trials),
+                                        "best": best, "trials": trials}, indent=2), encoding="utf-8")
     print("best:", best)
 
 

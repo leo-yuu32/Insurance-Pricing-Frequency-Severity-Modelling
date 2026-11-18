@@ -12,7 +12,7 @@ import pandas as pd
 REPO = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).resolve().parents[2]
 SCRATCH = Path(tempfile.gettempdir()) / "mtpl_audit_cache"  # cache outside the repo
 SCRATCH.mkdir(exist_ok=True)
-sys.path.insert(0, str(REPO / "src"))
+sys.path.insert(0, str(REPO / "legacy"))  # the legacy pipeline was in src/ at the time of the audit
 
 import config  # noqa: E402
 import data_preprocessing  # noqa: E402

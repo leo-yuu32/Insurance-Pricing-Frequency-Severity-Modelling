@@ -253,7 +253,7 @@ The last figure shows the large-loss problem from the other side: the load of 1.
 
 ### D17. No monotone constraint on `BonusMalus`
 
-**Under review (13 November 2026).** The sawtooth that makes the constraint expensive may be partly a data artefact. See D30.
+**Reviewed and left closed (Leo, 17 November 2026).** The sawtooth that makes the constraint expensive may be partly a data artefact (D30). The question does not arise for the final model, which does not use `BonusMalus` (D31).
 
 **Decision.** The primary GBM has no monotone constraint. A constrained version is tuned and reported alongside it, so the cost of the constraint is on record.
 
@@ -541,7 +541,9 @@ The other tests use synthetic data with known coefficients, for both families: t
 
 ## Review before Phase 5
 
-### D30. `BonusMalus` appears to contain the claims it is used to predict (open, waiting for Leo)
+### D30. `BonusMalus` appears to contain the claims it is used to predict
+
+**In one line.** The evidence that `BonusMalus` was recorded after some of the claims it is used to predict is strong but unproven. The final models leave it out (D31).
 
 **The question.** freMTPL2 does not say when `BonusMalus` was recorded. If it is the coefficient at the start of the exposure period, it is a rating factor. If it was recorded later, a claim in the data can already have moved it, and then it is partly a copy of the answer (target leakage). The ladder indicator (D23) is the term most exposed to this, because "off the claim-free ladder" means exactly "has been surcharged for a claim". Every number below comes from `src/check_bonus_malus_timing.py`, on training rows only, and is saved in `outputs/bonus_malus_timing.json`.
 
@@ -607,4 +609,43 @@ Not affected: the data cleaning, the split, the metrics, the severity model (dri
 - **B. Remove `BonusMalus` from every model** and redo Phases 1, 3 and 4. Cleanest, but it discards a real rating factor on circumstantial evidence, and the likely result is that the GBM does not beat the GLM. Three to four hours of compute.
 - **C. Keep the indicator with a one-line caveat**, as first proposed. Not recommended: the indicator is the term that leans hardest on the suspect pattern, and an actuary who knows the French system would ask this question first.
 
-**Status.** No model, result or document outside this entry has been changed. Phase 5 has not started.
+**Leo's decision (17 November 2026).** A variant of option A. The final models leave `BonusMalus` out of both the GLM and the GBM (D31). The nine-factor results stay in the results table as a labelled comparison: the analysis that exposed the timing problem, not a pricing improvement. Neither GLM has an interaction. The monotone constraint stays closed (D17).
+
+---
+
+## Phase 5: the final model
+
+### D31. The final model, specified before it was scored
+
+This entry was written and committed before the final models were scored on the holdout. Nothing in it was changed after the scores were seen. The results are in D32.
+
+**Why `BonusMalus` is dropped rather than kept with a caveat.** A factor that may contain the outcome cannot be defended in a price, and no caveat fixes the numbers it produces. Dropping it costs a real part of the signal (D30: block 8 suggests a genuine prior-claim effect of under 2 times), but what is left is a model whose inputs are all known when the policy is written. A pricing actuary would rather have a weaker model that is clean than a stronger one that may be scoring itself.
+
+**The final GLM.** Poisson, log link, offset `log(Exposure)`, fitted by statsmodels without a penalty. Terms: `DrivAgeBand` (ten bands), `VehAgeBand`, `VehPowerBand`, `LogDensity`, `VehBrand`, `VehGas`, `Region`. 55 parameters (the nine-factor GLM had 63; `BonusMalusBand` took 8). The bands and reference levels are those of D11. They were chosen on training data with `BonusMalus` in the model and are not chosen again, because choosing them again would add a selection step for one model and not the other. `Area` stays out (D11). No interaction, no ladder indicator.
+
+**The final GBM.** LightGBM, Poisson objective, `init_score = log(Exposure x training base rate)` (D16). Eight raw factors: `Area`, `VehPower`, `VehAge`, `DrivAge`, `VehBrand`, `VehGas`, `Density`, `Region`, with brand and region ordered by training frequency (D18). No monotone constraint. Tuned under the protocol of D19: the same 30 random parameter draws, 4-fold cross-validation on the training data, early stopping after 50 rounds without improvement. Chosen (`outputs/gbm_tuning_final.json`):
+
+| Learning rate | Leaves | Minimum data in leaf | L2 penalty | Trees | Cross-validated deviance |
+|---|---|---|---|---|---|
+| 0.1264 | 17 | 1,791 | 13.3636 | 92 | 0.469645 |
+
+All 30 trials fall between 0.469645 and 0.470040. Compared with the nine-factor GBM (26 leaves, at least 84 policies per leaf, 166 trees), the search prefers a smaller, more heavily regularised model: with `BonusMalus` gone there is less structure to find.
+
+**Shared parts.** The severity model is the Gamma GLM on driver age (D12), unchanged, because it never used `BonusMalus`. Each frequency model gets one scalar rebalancing factor fitted on training data (D13); the pure premium is rebalanced to capped training losses and the large-loss load is reported separately (D5).
+
+**Training cross-validation, before scoring** (same four folds; the GLM figure is from `outputs/bonus_malus_timing.json`):
+
+| Null | Final GLM | Final GBM | GLM minus GBM |
+|---|---|---|---|
+| 0.479249 | 0.470162 | 0.469645 | 0.000517 |
+
+The cross-validated gap is 8% of the nine-factor gap (0.006614). The spread across the 30 tuning trials (0.000395) is almost as large as the gap, so whether the GBM is ahead on the holdout is an open question.
+
+**What will be reported, whatever it shows.**
+
+- Primary: holdout Poisson deviance of each model, and the GLM-minus-GBM difference with a paired bootstrap interval (1,000 resamples of holdout policies, seed 42; D21). If the interval includes zero, the write-up says the GBM does not beat the GLM on these eight factors.
+- Also: Gini (D8), actual over expected overall, by rating factor and by length of record, and the double-lift chart of the pair (D9).
+- Secondary: pure premium Gini and actual over expected, on capped losses and on all losses.
+- The share-of-gap-closed ratio is not computed for the final pair, because no term is added to the final GLM.
+
+**What the holdout had already been used for.** Before this decision, seven nine-factor models were scored on the same holdout: the GLM, the GLM with the interaction, with the ladder indicator, with both, the additive GBM, the constrained GBM and the GBM. Two choices were then made with those scores in view. Dropping the interaction (Leo's decision of 13 November) followed its holdout interval. The `BonusMalus` investigation rests on training data alone (D30), but what prompted it was a holdout result that looked too good. The final models have not been scored before. Their specification was not chosen on the holdout, but the route to it passed through holdout results, so the final figures may be mildly optimistic. With 133,726 policies and differences of a few thousandths, I expect that effect to be small, but it cannot be measured.

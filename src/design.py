@@ -26,8 +26,10 @@ BONUS_MALUS_CAP = 150.0
 # Any other value below 100 can only be reached through a claim (each one multiplies by 1.25).
 CLAIM_FREE_LADDER = [50, 51, 54, 57, 60, 64, 68, 72, 76, 80, 85, 90, 95, 100]
 
-# The baseline frequency GLM. Area is left out because it is a banding of Density.
+# The nine-factor frequency GLM, kept as a comparison. Area is left out because it is a banding of Density.
 FREQUENCY_TERMS = ["DrivAgeBand", "VehAgeBand", "VehPowerBand", "BonusMalusBand", "LogDensity", "VehBrand", "VehGas", "Region"]
+# The final frequency GLM: the same terms without BonusMalus (docs/DECISIONS.md, D30 and D31).
+FINAL_FREQUENCY_TERMS = [t for t in FREQUENCY_TERMS if t != "BonusMalusBand"]
 # The severity GLM. Driver age is the only factor that improved cross-validated Gamma deviance
 # over an intercept-only model (src/compare_glm_designs.py).
 SEVERITY_TERMS = ["DrivAgeBand"]

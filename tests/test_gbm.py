@@ -67,6 +67,16 @@ def test_early_stopping_and_cross_validation(toy):
     assert deviance < null
 
 
+def test_final_features_leave_out_bonus_malus(toy):
+    assert gbm.FINAL_FEATURES == [f for f in gbm.FEATURES if f != "BonusMalus"]
+    model = gbm.fit(toy, PARAMS, n_rounds=50, features=gbm.FINAL_FEATURES)
+    assert model["booster"].feature_name() == gbm.FINAL_FEATURES
+    low, high = toy.head(500).assign(BonusMalus=50.0), toy.head(500).assign(BonusMalus=230.0)
+    np.testing.assert_array_equal(gbm.predict_rate(model, low), gbm.predict_rate(model, high))
+    deviance, _ = gbm.cv_score(toy, PARAMS, features=gbm.FINAL_FEATURES)
+    assert deviance > gbm.cv_score(toy, PARAMS)[0]   # the toy rate does depend on BonusMalus
+
+
 def test_monotone_option_makes_the_bonus_malus_effect_increasing(toy):
     model = gbm.fit(toy, PARAMS, n_rounds=150, monotone=True)
     grid = pd.concat([toy.head(200).assign(BonusMalus=float(b)) for b in range(50, 231, 5)], keys=range(50, 231, 5))

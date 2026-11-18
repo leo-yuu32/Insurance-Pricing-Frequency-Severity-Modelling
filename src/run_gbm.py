@@ -25,11 +25,11 @@ from run_glm import OUTPUTS, PREDICTIONS_PATH, holdout_metrics, rebalance_factor
 PLOTS = OUTPUTS.parent / "plots"
 
 
-def add_model(policies, name, tuning, additive=False, monotone=False):
+def add_model(policies, name, tuning, additive=False, monotone=False, features=None):
     """Fit one GBM on the training rows and add freq_<name> and pp_<name>. Returns its factors."""
     train = policies[~policies["is_holdout"]]
     best = tuning["best"]
-    model = gbm.fit(train, best["params"], best["n_rounds"], additive=additive, monotone=monotone)
+    model = gbm.fit(train, best["params"], best["n_rounds"], additive=additive, monotone=monotone, features=features)
     raw = gbm.predict_rate(model, policies)
     freq_factor = rebalance_factor(train["ClaimNb"], raw[~policies["is_holdout"].to_numpy()], train["Exposure"])
     policies[f"freq_{name}"] = raw * freq_factor
@@ -62,6 +62,7 @@ def plot_double_lift(table, label_a, label_b, path):
 def main():
     saved = pd.read_parquet(PREDICTIONS_PATH)
     saved = saved.drop(columns=[c for c in saved.columns if c.endswith(("_gbm", "_gbm_additive", "_gbm_monotone", "_gbm_unconstrained"))])
+    # (the final models' columns end in "_final" and are left alone; run_final.py writes them)
     policies = add_model_columns(saved)
     train = policies[~policies["is_holdout"]]
     null_rate = float(train["ClaimNb"].sum() / train["Exposure"].sum())

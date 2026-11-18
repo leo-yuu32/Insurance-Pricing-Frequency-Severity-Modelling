@@ -91,13 +91,8 @@ def cv_with_and_without_bonus_malus(train):
     out = {"null": cv_null(train),
            "glm": cv_frequency_deviance(train, FREQUENCY_TERMS),
            "glm_without_bonus_malus": cv_frequency_deviance(train, [t for t in FREQUENCY_TERMS if t != "BonusMalusBand"]),
-           "gbm": gbm.cv_score(train, tuned)[0]}
-    all_features = gbm.FEATURES
-    try:  # gbm.py reads its feature list from this module-level name
-        gbm.FEATURES = [f for f in all_features if f != "BonusMalus"]
-        out["gbm_without_bonus_malus"] = gbm.cv_score(train, tuned)[0]
-    finally:
-        gbm.FEATURES = all_features
+           "gbm": gbm.cv_score(train, tuned)[0],
+           "gbm_without_bonus_malus": gbm.cv_score(train, tuned, features=gbm.FINAL_FEATURES)[0]}
     out["glm_to_gbm_gap"] = out["glm"] - out["gbm"]
     out["glm_to_gbm_gap_without_bonus_malus"] = out["glm_without_bonus_malus"] - out["gbm_without_bonus_malus"]
     return out
