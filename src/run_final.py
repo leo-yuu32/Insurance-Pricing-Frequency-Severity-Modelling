@@ -61,7 +61,8 @@ def main():
     (OUTPUTS / "glm_final_frequency_summary.txt").write_text(summary_text(freq, design.columns), encoding="utf-8")
 
     # The shared severity GLM (driver age only). Refitted here for its coefficients; it is the
-    # same model as sev_glm, which run_glm.py wrote.
+    # same model as sev_glm, which run_glm.py wrote. Its response is defined as in data.load_dataset.
+    policies["AvgSevCapped"] = np.where(policies["ClaimRecords"] > 0, policies["TotalLossCapped"] / policies["ClaimRecords"].clip(lower=1), np.nan)
     sev_pred, sev_design, sev = fit_severity_model(policies)
     if not np.allclose(sev_pred, policies["sev_glm"], rtol=1e-10):
         raise SystemExit("severity refit does not match sev_glm in predictions.parquet")

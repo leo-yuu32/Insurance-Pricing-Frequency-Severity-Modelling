@@ -1,0 +1,483 @@
+{
+  "description": "Final frequency and severity GLMs (statsmodels). Read by src/build_rating_engine.py.",
+  "frequency": {
+    "coefficients": [
+      {
+        "term": "Intercept",
+        "level": "",
+        "coef": -3.2726412631977073
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "41-50",
+        "coef": 0.0
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "31-40",
+        "coef": -0.11031918995704945
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "51-60",
+        "coef": -0.09941589657399684
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "61-75",
+        "coef": -0.19194810418986177
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "26-30",
+        "coef": 0.03691972843690533
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "76+",
+        "coef": -0.08546446678669709
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "24-25",
+        "coef": 0.35395587477434326
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "22-23",
+        "coef": 0.6665810433674221
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "20-21",
+        "coef": 0.9554309844498581
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "18-19",
+        "coef": 1.3462113733076913
+      },
+      {
+        "term": "VehAgeBand",
+        "level": "6-12",
+        "coef": 0.0
+      },
+      {
+        "term": "VehAgeBand",
+        "level": "2-5",
+        "coef": -0.05186516988713428
+      },
+      {
+        "term": "VehAgeBand",
+        "level": "13-17",
+        "coef": -0.17233285954275918
+      },
+      {
+        "term": "VehAgeBand",
+        "level": "0-1",
+        "coef": -0.0768784095029992
+      },
+      {
+        "term": "VehAgeBand",
+        "level": "18+",
+        "coef": -0.46121877113112064
+      },
+      {
+        "term": "VehPowerBand",
+        "level": "6",
+        "coef": 0.0
+      },
+      {
+        "term": "VehPowerBand",
+        "level": "7",
+        "coef": -0.029733545877893775
+      },
+      {
+        "term": "VehPowerBand",
+        "level": "5",
+        "coef": -0.0326704986566705
+      },
+      {
+        "term": "VehPowerBand",
+        "level": "4",
+        "coef": -0.07541888231033013
+      },
+      {
+        "term": "VehPowerBand",
+        "level": "8",
+        "coef": -0.00776953054931421
+      },
+      {
+        "term": "VehPowerBand",
+        "level": "10",
+        "coef": 0.09677270628673923
+      },
+      {
+        "term": "VehPowerBand",
+        "level": "9",
+        "coef": 0.062229957861077274
+      },
+      {
+        "term": "VehPowerBand",
+        "level": "11",
+        "coef": 0.17946194690703726
+      },
+      {
+        "term": "VehPowerBand",
+        "level": "12+",
+        "coef": 0.0862435471666867
+      },
+      {
+        "term": "LogDensity",
+        "level": "",
+        "coef": 0.10559846611194805
+      },
+      {
+        "term": "VehBrand",
+        "level": "B1",
+        "coef": 0.0
+      },
+      {
+        "term": "VehBrand",
+        "level": "B2",
+        "coef": 0.007815083549447177
+      },
+      {
+        "term": "VehBrand",
+        "level": "B12",
+        "coef": -0.19375853160301773
+      },
+      {
+        "term": "VehBrand",
+        "level": "B3",
+        "coef": 0.05815951693726736
+      },
+      {
+        "term": "VehBrand",
+        "level": "B5",
+        "coef": 0.09704622494252231
+      },
+      {
+        "term": "VehBrand",
+        "level": "B6",
+        "coef": 0.043447791290986436
+      },
+      {
+        "term": "VehBrand",
+        "level": "B4",
+        "coef": 0.02922593413509498
+      },
+      {
+        "term": "VehBrand",
+        "level": "B10",
+        "coef": 0.028442986194197675
+      },
+      {
+        "term": "VehBrand",
+        "level": "B11",
+        "coef": 0.18244563978103714
+      },
+      {
+        "term": "VehBrand",
+        "level": "B13",
+        "coef": 0.05431046923746072
+      },
+      {
+        "term": "VehBrand",
+        "level": "B14",
+        "coef": -0.107360997690673
+      },
+      {
+        "term": "VehGas",
+        "level": "Regular",
+        "coef": 0.0
+      },
+      {
+        "term": "VehGas",
+        "level": "Diesel",
+        "coef": 0.16808124665301824
+      },
+      {
+        "term": "Region",
+        "level": "R24",
+        "coef": 0.0
+      },
+      {
+        "term": "Region",
+        "level": "R82",
+        "coef": 0.21596209240947614
+      },
+      {
+        "term": "Region",
+        "level": "R93",
+        "coef": 0.13544708244910694
+      },
+      {
+        "term": "Region",
+        "level": "R11",
+        "coef": 0.06561132850983527
+      },
+      {
+        "term": "Region",
+        "level": "R53",
+        "coef": -0.0266541954843059
+      },
+      {
+        "term": "Region",
+        "level": "R52",
+        "coef": 0.03995182741948919
+      },
+      {
+        "term": "Region",
+        "level": "R91",
+        "coef": 0.11426441210162273
+      },
+      {
+        "term": "Region",
+        "level": "R72",
+        "coef": 0.07671212272489983
+      },
+      {
+        "term": "Region",
+        "level": "R31",
+        "coef": 0.07940535353272851
+      },
+      {
+        "term": "Region",
+        "level": "R54",
+        "coef": 0.09931918118508375
+      },
+      {
+        "term": "Region",
+        "level": "R41",
+        "coef": -0.18557979676895642
+      },
+      {
+        "term": "Region",
+        "level": "R73",
+        "coef": -0.1997739201828134
+      },
+      {
+        "term": "Region",
+        "level": "R25",
+        "coef": -0.062040460458182914
+      },
+      {
+        "term": "Region",
+        "level": "R26",
+        "coef": 0.06598869059434669
+      },
+      {
+        "term": "Region",
+        "level": "R22",
+        "coef": 0.2230582210194609
+      },
+      {
+        "term": "Region",
+        "level": "R23",
+        "coef": -0.029615815673951298
+      },
+      {
+        "term": "Region",
+        "level": "R74",
+        "coef": 0.33148163405868475
+      },
+      {
+        "term": "Region",
+        "level": "R83",
+        "coef": -0.048370884875945826
+      },
+      {
+        "term": "Region",
+        "level": "R94",
+        "coef": 0.15836697122151588
+      },
+      {
+        "term": "Region",
+        "level": "R42",
+        "coef": -0.03676112023583155
+      },
+      {
+        "term": "Region",
+        "level": "R21",
+        "coef": 0.0898371542518729
+      },
+      {
+        "term": "Region",
+        "level": "R43",
+        "coef": 0.032204302166967645
+      }
+    ],
+    "columns": [
+      "Intercept",
+      "DrivAgeBand[31-40]",
+      "DrivAgeBand[51-60]",
+      "DrivAgeBand[61-75]",
+      "DrivAgeBand[26-30]",
+      "DrivAgeBand[76+]",
+      "DrivAgeBand[24-25]",
+      "DrivAgeBand[22-23]",
+      "DrivAgeBand[20-21]",
+      "DrivAgeBand[18-19]",
+      "VehAgeBand[2-5]",
+      "VehAgeBand[13-17]",
+      "VehAgeBand[0-1]",
+      "VehAgeBand[18+]",
+      "VehPowerBand[7]",
+      "VehPowerBand[5]",
+      "VehPowerBand[4]",
+      "VehPowerBand[8]",
+      "VehPowerBand[10]",
+      "VehPowerBand[9]",
+      "VehPowerBand[11]",
+      "VehPowerBand[12+]",
+      "LogDensity",
+      "VehBrand[B2]",
+      "VehBrand[B12]",
+      "VehBrand[B3]",
+      "VehBrand[B5]",
+      "VehBrand[B6]",
+      "VehBrand[B4]",
+      "VehBrand[B10]",
+      "VehBrand[B11]",
+      "VehBrand[B13]",
+      "VehBrand[B14]",
+      "VehGas[Diesel]",
+      "Region[R82]",
+      "Region[R93]",
+      "Region[R11]",
+      "Region[R53]",
+      "Region[R52]",
+      "Region[R91]",
+      "Region[R72]",
+      "Region[R31]",
+      "Region[R54]",
+      "Region[R41]",
+      "Region[R73]",
+      "Region[R25]",
+      "Region[R26]",
+      "Region[R22]",
+      "Region[R23]",
+      "Region[R74]",
+      "Region[R83]",
+      "Region[R94]",
+      "Region[R42]",
+      "Region[R21]",
+      "Region[R43]"
+    ]
+  },
+  "severity": {
+    "coefficients": [
+      {
+        "term": "Intercept",
+        "level": "",
+        "coef": 7.432226124966187
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "41-50",
+        "coef": 0.0
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "31-40",
+        "coef": 0.17817263973157077
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "51-60",
+        "coef": 0.06012490292561452
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "61-75",
+        "coef": 0.21828158898487804
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "26-30",
+        "coef": 0.19124568833783007
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "76+",
+        "coef": 0.4266958390551564
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "24-25",
+        "coef": 0.02862393003728181
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "22-23",
+        "coef": 0.20593991255002314
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "20-21",
+        "coef": 0.6083698846670467
+      },
+      {
+        "term": "DrivAgeBand",
+        "level": "18-19",
+        "coef": 0.8931182721380773
+      }
+    ],
+    "columns": [
+      "Intercept",
+      "DrivAgeBand[31-40]",
+      "DrivAgeBand[51-60]",
+      "DrivAgeBand[61-75]",
+      "DrivAgeBand[26-30]",
+      "DrivAgeBand[76+]",
+      "DrivAgeBand[24-25]",
+      "DrivAgeBand[22-23]",
+      "DrivAgeBand[20-21]",
+      "DrivAgeBand[18-19]"
+    ]
+  },
+  "bands": {
+    "DrivAgeBand": [
+      17,
+      19,
+      21,
+      23,
+      25,
+      30,
+      40,
+      50,
+      60,
+      75,
+      200
+    ],
+    "VehAgeBand": [
+      -1,
+      1,
+      5,
+      12,
+      17,
+      200
+    ],
+    "VehPowerBand": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      99
+    ]
+  },
+  "band_sources": {
+    "DrivAgeBand": "DrivAge",
+    "VehAgeBand": "VehAge",
+    "VehPowerBand": "VehPower"
+  },
+  "frequency_rebalance_factor": 0.999999999999963,
+  "pure_premium_rebalance_factor": 1.0017103974052115,
+  "large_loss_load": 1.1916873605800282
+}
