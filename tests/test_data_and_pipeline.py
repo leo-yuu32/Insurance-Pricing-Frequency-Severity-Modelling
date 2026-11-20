@@ -81,7 +81,21 @@ def test_frequency_glm_balances_on_training_data(predictions):
 
 def test_pure_premium_is_rebalanced_to_capped_training_losses(predictions):
     train = predictions[~predictions["is_holdout"]]
-    assert (train["pp_glm"] * train["Exposure"]).sum() == pytest.approx(train["TotalLossCapped"].sum(), rel=1e-9)
+    for model in [m for m in ["glm", "glm_final", "gbm_final"] if f"pp_{m}" in predictions]:
+        assert (train[f"pp_{model}"] * train["Exposure"]).sum() == pytest.approx(train["TotalLossCapped"].sum(), rel=1e-9), model
+
+
+def test_final_models_balance_on_training_data(predictions):
+    if "freq_glm_final" not in predictions:
+        pytest.skip("final models not run")
+    train = predictions[~predictions["is_holdout"]]
+    for model in ["glm_final", "gbm_final"]:
+        expected = (train[f"freq_{model}"] * train["Exposure"]).sum()
+        assert expected == pytest.approx(train["ClaimNb"].sum(), rel=1e-9), model
+    # The final GLM balances by level of each of its categorical factors as well (Poisson GLM property).
+    for factor in ["DrivAgeBand", "VehAgeBand", "VehPowerBand", "VehBrand", "VehGas", "Region"]:
+        by_level = pd.DataFrame({"e": train["freq_glm_final"] * train["Exposure"], "a": train["ClaimNb"]}).groupby(train[factor]).sum()
+        np.testing.assert_allclose(by_level["e"], by_level["a"], rtol=1e-5, err_msg=factor)
 
 
 def test_predictions_are_positive_and_complete(predictions):

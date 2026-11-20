@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 import data
-from design import FREQUENCY_TERMS, SEVERITY_TERMS, Design, add_model_columns
+from design import FINAL_FREQUENCY_TERMS, FREQUENCY_TERMS, SEVERITY_TERMS, Design, add_model_columns
 from glm import fit_gamma, fit_poisson
 from irls import fit_irls, irls_step
 
@@ -109,12 +109,13 @@ def train():
     return add_model_columns(policies[~policies["is_holdout"]])
 
 
-def test_reproduces_the_pipeline_frequency_glm(train):
-    X = Design(FREQUENCY_TERMS).fit_transform(train).to_numpy()
+@pytest.mark.parametrize("terms, width", [(FINAL_FREQUENCY_TERMS, 55), (FREQUENCY_TERMS, 63)], ids=["final", "nine_factor"])
+def test_reproduces_the_pipeline_frequency_glm(train, terms, width):
+    X = Design(terms).fit_transform(train).to_numpy()
     theirs = fit_poisson(X, train["ClaimNb"], train["Exposure"])
     ours = fit_irls(X, train["ClaimNb"], family="poisson", offset=np.log(train["Exposure"].to_numpy()))
     assert_matches_statsmodels(ours, theirs)
-    assert X.shape[1] == 63
+    assert X.shape[1] == width
 
 
 def test_reproduces_the_pipeline_severity_glm(train):

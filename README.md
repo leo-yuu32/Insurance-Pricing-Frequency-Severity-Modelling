@@ -1,103 +1,119 @@
-# Insurance Pricing Engine & Dashboard
-### End-to-End Frequency-Severity GLM Modelling & Commercial Dislocation Analysis Tool.
+# Motor claim frequency: GLM and GBM on freMTPL2
 
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
-![Scikit-Learn](https://img.shields.io/badge/Library-Scikit--Learn-orange)
-![Streamlit](https://img.shields.io/badge/Frontend-Streamlit-red)
-![Status](https://img.shields.io/badge/Status-Complete-green)
+A frequency-severity pricing model for French motor third-party liability insurance (the freMTPL2 dataset), and a fair comparison of a Poisson GLM with a LightGBM model on the same data, rating factors, split and metrics.
 
-## **Project Overview**
+Dashboard: https://insurance-pricing-dashboard.streamlit.app/
 
-This project is an end-to-end actuarial pricing pipeline and interactive simulation tool for French Motor Third-Party Liability (MTPL) insurance. It implements a Frequency-Severity GLM architecture, Isotonic Calibration, and a Streamlit dashboard for Commercial Dislocation Analysis.
+## Results
 
-The tool bridges the gap between technical modelling and commercial strategy by allowing users to adjust actuarial loadings and visualise the impact on the model's Technical and Commercial Prices via Lift Charts, Lorenz Curves, and Dislocation Histograms. View the dashboard: https://insurance-pricing-dashboard.streamlit.app/
+All figures are on a holdout of 133,726 policies (70,827 policy-years, 5,215 claims) that was not used for fitting, tuning or choosing any model term.
 
-The project utilises the industry-standard French Motor datasets (ID 41214/41215) to demonstrate the full Technical Pricing Cycle: Data Preprocessing $\rightarrow$ GLM Modelling $\rightarrow$ Calibration $\rightarrow$ Commercial Analysis.
+**Final models: eight rating factors, without `BonusMalus`.**
 
-## **Key Features**
+| Frequency model | Poisson deviance | Deviance explained | Gini | Actual / expected |
+|---|---|---|---|---|
+| Null (training frequency) | 0.47703 | 0 | 0 | |
+| GLM (statsmodels, 55 parameters) | 0.46866 | 1.75% | 0.179 | 0.998 |
+| GBM (LightGBM, tuned by cross-validation) | 0.46833 | 1.82% | 0.183 | 0.998 |
 
-### **1. Technical Risk Modelling**
-The engine implements a decoupled Frequency-Severity GLM structure to determine the Technical Pure Premium.
+The GLM's deviance exceeds the GBM's by 0.00033, with a 95% paired bootstrap interval of -0.00019 to 0.00085. The interval includes zero: on these eight factors the GBM does not beat the GLM. The double-lift chart (`plots/double_lift_final_glm_vs_gbm.png`) shows the same thing. Where the two models disagree, the actual frequency lies between them.
 
-* **Frequency (Poisson GLM):** Utilises a log-link function to model claim counts, ensuring non-negative arrival rates.
-* **Severity (Gamma GLM):** Models the average cost per claim for policies where $ClaimNb > 0$. Includes Actuarial Capping at the 99.9th percentile to remove the volatility of catastrophic "large losses" from attritional pricing.
-* **Technical Pure Premium:** Calculated using the fundamental identity:
-    $$PurePremium = E[Frequency] \times E[Severity|ClaimNb > 0]$$
-* **Isotonic Calibration:** Applies a non-parametric mapping to the raw model output to correct calibration bias, ensuring that predicted probabilities align closely with observed frequencies while maintaining monotonicity.
+**Comparison with `BonusMalus` (nine factors), set aside.**
 
-### **2. Commercial Analysis (Streamlit Dashboard)**
-An interactive UI allows for real-time stress testing of commercial pricing rules:
+| Frequency model | Poisson deviance | Deviance explained | Gini |
+|---|---|---|---|
+| GLM | 0.45391 | 4.85% | 0.297 |
+| GLM + bonus-malus ladder indicator | 0.44991 | 5.69% | 0.315 |
+| Additive GBM (no interactions) | 0.44876 | 5.93% | 0.319 |
+| GBM | 0.44780 | 6.13% | 0.320 |
 
-* **Commercial Levers:** Real-time sliders to adjust loadings for high-risk segments (e.g., Young Drivers aged 18-21) and discounts for preferred segments (e.g., Vehicle Power < 4).
-* **Performance Metrics:** Real-time calculation of Technical vs. Commercial **Gini Coefficients** to ensure commercial adjustments do not degrade risk differentiation.
+With `BonusMalus` the GBM leads by 0.0061 (interval 0.0049 to 0.0073), and one extra GLM term closes two thirds of that gap. That term flags bonus-malus scores that can only be reached through a claim. The result prompted a check of the factor itself, described below. These figures are kept as the analysis that exposed the problem, not as a pricing result.
 
-### **3. Visualisation**
-* **Lift Charts:** Decile-based analysis comparing Predicted vs. Actual loss costs to validate model performance across risk bands.
-* **Lorenz Curves:** Visual representation of the model's ability to sort risk (Gini Coefficient).
-* **One-Way Analysis:** Dual-axis plots showing average loss cost and exposure volume across rating factors (Driver Age, Vehicle Age, etc.).
-* **Dislocation Histograms:** Visualises the distribution of price changes between the Technical Price and the Final Commercial Price, quantifying the impact of actuarial loadings.
+### Caveats
 
-## **Project Layout**
+- **`BonusMalus` timing.** The dataset does not say when the bonus-malus coefficient was recorded. Three checks on the training data suggest it was recorded after some of the claims it is used to predict:
+  - its effect is about three times stronger in full-year records than in records under half a year;
+  - in full-year records, 32% of policies whose score was raised at the last renewal have a claim in the same period, against 3.6% at the minimum score;
+  - which scores carry the excess frequency shifts with the policy number.
+
+  The evidence is strong but unproven, so the final models leave the factor out. A real insurer knows each driver's coefficient at the start of the policy and would use it; the final model is what this dataset supports cleanly. Details: `docs/DECISIONS.md`, D30 to D32.
+- **Holdout reuse.** The holdout was used to compare several nine-factor models, and one selection decision (dropping an interaction term) was made with those results in view. The final models were specified and committed before they were scored, but the final figures may be mildly optimistic.
+- **Exposure.** Claim frequency is not proportional to exposure in this data. Both models over-predict full-year records (actual over expected about 0.80) and under-predict records under half a year (about 1.43), because exposure enters only as an offset.
+
+## Method
+
+**Data.** freMTPL2freq and freMTPL2sev from OpenML (IDs 41214 and 41215). Policies with `IDpol` up to 24,951 are excluded: every one of them has a claim count, but almost none has a claim amount, so they are not a random sample of the book. Claim counts are taken from the severity records and capped at 4; exposure is capped at 1. Individual claims are capped at EUR 181,271, the 99.9th percentile of training claims, and the excess is reported as one flat large-loss load (1.192). 668,626 policies remain.
+
+**Split.** Five folds with `StratifiedGroupKFold` (seed 42), stratified on whether a policy has a claim and grouped so that policies with identical rating factors stay together. One fold is the holdout; the other four are the training data and the cross-validation folds for every choice. The holdout policy IDs are in `artifacts/holdout_idpol.txt`.
+
+**Models.**
+
+- *Frequency GLM*: Poisson, log link, offset log(exposure), fitted by statsmodels without a penalty. Driver age (10 bands), vehicle age (5 bands), vehicle power, log(density), vehicle brand, fuel and region. Bands were chosen by cross-validated deviance on the training data. `Area` is left out because it is a banding of `Density`.
+- *Frequency GBM*: LightGBM, Poisson objective, exposure as an offset through `init_score`, the same factors raw. Tuned by a 30-trial random search with 4-fold cross-validation and early stopping on the training data (learning rate 0.126, 17 leaves, at least 1,791 policies per leaf, 92 trees).
+- *Severity*: one Gamma GLM (log link) on capped claims, shared by both frequency models. Only driver age improved cross-validated deviance, so it is the only factor.
+- Each model gets one scalar rebalancing factor fitted on training data. All are within 0.3% of 1.
+
+**Metrics.** Poisson deviance per policy-year on the holdout is the primary metric. Gini orders policies by predicted frequency and is twice the area between the Lorenz curve and the diagonal, so a model with no discrimination scores 0. Actual over expected is reported overall and by rating factor. Differences between models are given with a paired bootstrap interval (1,000 resamples). Pure premium metrics are secondary, because one claim of EUR 4.08 million dominates any loss-based metric.
+
+**Independent checks.**
+
+- `src/irls.py` is a GLM solver written from scratch in NumPy (iteratively reweighted least squares). On the final frequency model's design matrix (534,900 by 55) it reproduces the statsmodels coefficients to 6e-12 and the standard errors to 1e-8 (relative). For the Poisson log link each IRLS step is a Newton-Raphson step; for the Gamma log link it is Fisher scoring. Both statements are checked in `tests/test_irls.py`.
+- `artifacts/rating_engine_final_glm.xlsx` prices a policy with Excel formulas from the final GLM's rating tables. It reproduces the Python price for 100 of 100 holdout policies.
+
+The reasoning behind every choice is in `docs/DECISIONS.md`.
+
+## Repository
 
 ```text
-.
-├── plots/                      # Generated output directory for visualizations
-│   ├── lift_chart_technical.png
-│   ├── lift_chart_commercial.png
-│   ├── lorenz_curve.png
-│   └── ...
-│
-├── src/                        # Source code directory
-│   ├── config.py               # Central configuration and hyperparameters
-│   ├── dashboard.py            # Streamlit application entry point
-│   ├── data_preprocessing.py   # Data fetching and cleaning logic
-│   ├── frequency_model.py      # Poisson GLM pipeline
-│   ├── severity_model.py       # Gamma GLM pipeline
-│   └── pricing_engine.py       # Main script for training and static plotting
-│
-├── .gitignore
-├── README.md
-└── requirements.txt            # Python dependencies
+src/
+  data.py                 loading, cleaning, the split
+  design.py               bands and the GLM design matrix
+  metrics.py              deviance, Gini, actual/expected, double lift, bootstrap
+  glm.py, run_glm.py      statsmodels GLMs
+  gbm.py, tune_gbm.py     LightGBM model and its tuning
+  run_gbm.py              nine-factor GBMs
+  run_interactions.py     SHAP analysis and GLM extensions (nine factors)
+  check_bonus_malus_timing.py   the BonusMalus timing checks
+  run_final.py            the final models
+  summarise_models.py     results file read by the dashboard
+  build_rating_engine.py  the Excel rating engine
+  irls.py                 NumPy IRLS solver
+  dashboard.py            Streamlit app
+tests/                    pytest suite
+outputs/                  results (JSON and model summaries)
+plots/                    charts
+artifacts/                holdout IDs and Excel workbooks
+docs/                     DECISIONS.md, AUDIT.md, INTERVIEW_NOTES.md, CV_SUMMARY.md
+legacy/                   the first version of the project, archived
 ```
 
-## **Installation**
+## Reproducing the results
 
-### Prerequisites
-Ensure you have the following installed before proceeding:
-* **Python 3.9** or higher
-* **pip** (Python package installer)
+PowerShell, from the repository root. Times are compute times on a laptop.
 
-### Setup
-Run the following commands to clone the repository and install the necessary dependencies:
-
-```bash
-# Clone the repository
-git clone https://github.com/leo-yuu32/Insurance-Pricing-Frequency-Severity-Modelling.git
-
-# Navigate to the project directory
-cd Insurance-Pricing-Frequency-Severity-Modelling
-
-# Install dependencies
-pip install -r requirements.txt
+```powershell
+python -m pip install -r requirements-dev.txt
+python src\run_glm.py                     # downloads the data and builds the split on first run (about 5 minutes)
+python src\tune_gbm.py                    # nine-factor GBM tuning (about 35 minutes)
+python src\tune_gbm.py additive           # additive GBM tuning (one to two hours)
+python src\tune_gbm.py monotone           # constrained GBM tuning (about 75 minutes)
+python src\run_gbm.py
+python src\run_interactions.py            # about 20 minutes
+python src\check_bonus_malus_timing.py    # about 6 minutes
+python src\tune_gbm.py final              # final GBM tuning (about 10 minutes)
+python src\run_final.py
+python src\summarise_models.py
+python src\build_rating_engine.py recalc  # "recalc" opens the workbook in Excel to compute and save its values
+python -m pytest
 ```
 
-## Usage
+## Dashboard
 
-### 1. Run the Pricing Pipeline
-First, execute the pricing engine to download data, train the models, and generate the baseline actuarial plots.
+The app reads `outputs/model_comparison.json` only. It fits no model and does not import the modelling libraries, so it installs from `requirements.txt` alone.
 
-```bash
-python src/pricing_engine.py
+```powershell
+python -m pip install -r requirements.txt
+streamlit run src\dashboard.py
 ```
 
-### 2. Launch the Dashboard
-Start the interactive simulation tool to test commercial strategies in real-time.
-
-```bash
-streamlit run src/dashboard.py
-```
-
-## Motivation
-I was inspired to build a pricing engine after completing Forage's Actuarial Analyst Job Simulation. The case study of marine insurance made me want to learn more about the industry, and I felt that by building a full-scale Frequency-Severity pipeline from scratch, I could better understand the role of an actuary and the nuances of the Technical Pricing Cycle.
-
-This project also allowed me to bridge the gap between the mathematical theory of GLMs and their real-life application, bringing the theoretical models to life through interactive visualisation.
+On Streamlit Community Cloud, select Python 3.13 in the app's Advanced settings (the platform does not read `runtime.txt`).

@@ -1,159 +1,266 @@
 {
-  "holdout_policies": 133726,
-  "null_deviance": 0.4770300891687389,
-  "models": {
+  "holdout": {
+    "policies": 133726,
+    "exposure": 70826.91142375927,
+    "claims": 5215
+  },
+  "train": {
+    "policies": 534900,
+    "exposure": 282733.01660753053,
+    "claims": 20883
+  },
+  "final": {
+    "title": "Final models: eight rating factors, without BonusMalus",
+    "models": {
+      "glm_final": {
+        "label": "GLM",
+        "poisson_deviance": 0.4686600073534343,
+        "null_deviance": 0.4770300891687389,
+        "deviance_explained": 0.01754623451508075,
+        "gini": 0.17901982152803142,
+        "a_over_e": 0.9984437322480384,
+        "train_deviance": 0.4695398309828877,
+        "pure_premium_a_over_e_capped_losses": 0.9739826874705636,
+        "pure_premium_gini_capped_losses": 0.19895294529790553,
+        "pure_premium_gini_all_losses": 0.20669113863268607,
+        "pure_premium_gini_without_largest_policy": 0.18260438171121374
+      },
+      "gbm_final": {
+        "label": "GBM",
+        "poisson_deviance": 0.46833224621408814,
+        "null_deviance": 0.4770300891687389,
+        "deviance_explained": 0.018233321444790618,
+        "gini": 0.18263127871860108,
+        "a_over_e": 0.9981243326504967,
+        "train_deviance": 0.4661142795432831,
+        "pure_premium_a_over_e_capped_losses": 0.9733881494980144,
+        "pure_premium_gini_capped_losses": 0.20483988525615227,
+        "pure_premium_gini_all_losses": 0.2120181709127653,
+        "pure_premium_gini_without_largest_policy": 0.1881148320676692
+      }
+    },
+    "glm_minus_gbm": {
+      "deviance_reduction": 0.0003277611393462112,
+      "bootstrap_95_low": -0.0001876816733880606,
+      "bootstrap_95_high": 0.000848400827178681
+    },
+    "double_lift": [
+      {
+        "bin": 1,
+        "exposure": 7082.505254135788,
+        "ratio_min": 0.48523747125523115,
+        "ratio_max": 0.8643349475029156,
+        "actual_rate": 0.0756794355622971,
+        "rate_glm": 0.08622193544169482,
+        "rate_gbm": 0.0698656942144778
+      },
+      {
+        "bin": 2,
+        "exposure": 7082.85812860244,
+        "ratio_min": 0.8643349475029156,
+        "ratio_max": 0.9086415749727893,
+        "actual_rate": 0.06706332265527462,
+        "rate_glm": 0.07863002576778401,
+        "rate_gbm": 0.06983081993105278
+      },
+      {
+        "bin": 3,
+        "exposure": 7082.458026798413,
+        "ratio_min": 0.9086423413155984,
+        "ratio_max": 0.941096695851867,
+        "actual_rate": 0.06974979564027294,
+        "rate_glm": 0.07617425243053291,
+        "rate_gbm": 0.0704796256347821
+      },
+      {
+        "bin": 4,
+        "exposure": 7082.914113331836,
+        "ratio_min": 0.9410967650151332,
+        "ratio_max": 0.9693721811336637,
+        "actual_rate": 0.07454558837670648,
+        "rate_glm": 0.07376637067925829,
+        "rate_gbm": 0.070465937326512
+      },
+      {
+        "bin": 5,
+        "exposure": 7082.964995134366,
+        "ratio_min": 0.9693721811336637,
+        "ratio_max": 0.9967185842760949,
+        "actual_rate": 0.07539215573800387,
+        "rate_glm": 0.0727980616123434,
+        "rate_gbm": 0.07157203802800796
+      },
+      {
+        "bin": 6,
+        "exposure": 7082.869515682311,
+        "ratio_min": 0.9967210791433159,
+        "ratio_max": 1.0247999841130437,
+        "actual_rate": 0.07595791491129468,
+        "rate_glm": 0.07174347171299839,
+        "rate_gbm": 0.07249142274014103
+      },
+      {
+        "bin": 7,
+        "exposure": 7081.968823265214,
+        "ratio_min": 1.0247999841130437,
+        "ratio_max": 1.0570228661970293,
+        "actual_rate": 0.0690485954122771,
+        "rate_glm": 0.07044956852134318,
+        "rate_gbm": 0.0733048946310448
+      },
+      {
+        "bin": 8,
+        "exposure": 7083.178738678045,
+        "ratio_min": 1.0570298309553754,
+        "ratio_max": 1.0980808393482653,
+        "actual_rate": 0.07581341934344889,
+        "rate_glm": 0.06950487787321698,
+        "rate_gbm": 0.07481902628692495
+      },
+      {
+        "bin": 9,
+        "exposure": 7082.399159368216,
+        "ratio_min": 1.0980808393482653,
+        "ratio_max": 1.165717765017165,
+        "actual_rate": 0.07582176433669166,
+        "rate_glm": 0.06955556648314207,
+        "rate_gbm": 0.07846975125562974
+      },
+      {
+        "bin": 10,
+        "exposure": 7082.794668762632,
+        "ratio_min": 1.165717765017165,
+        "ratio_max": 1.977074033227885,
+        "actual_rate": 0.07722940245782407,
+        "rate_glm": 0.06860582443917487,
+        "rate_gbm": 0.08638648484415858
+      }
+    ]
+  },
+  "with_bonus_malus": {
+    "title": "Comparison with BonusMalus (nine factors): set aside, see docs/DECISIONS.md D30",
+    "models": {
+      "glm": {
+        "label": "GLM",
+        "poisson_deviance": 0.4539109005143823,
+        "null_deviance": 0.4770300891687389,
+        "deviance_explained": 0.04846484357966496,
+        "gini": 0.2965680674439375,
+        "a_over_e": 0.9997200508997106,
+        "train_deviance": 0.45467686618913944,
+        "pure_premium_a_over_e_capped_losses": 0.9753812346914887,
+        "pure_premium_gini_capped_losses": 0.3351129028550457,
+        "pure_premium_gini_all_losses": 0.341177218864414,
+        "pure_premium_gini_without_largest_policy": 0.3220695581602062
+      },
+      "glm_ladder": {
+        "label": "GLM + ladder indicator",
+        "poisson_deviance": 0.44990992798261764,
+        "null_deviance": 0.4770300891687389,
+        "deviance_explained": 0.056852097596988505,
+        "gini": 0.3148549790427384,
+        "a_over_e": 1.0005438726584224,
+        "train_deviance": 0.4509325369796074,
+        "pure_premium_a_over_e_capped_losses": 0.9761052636796079,
+        "pure_premium_gini_capped_losses": 0.3479680619295442,
+        "pure_premium_gini_all_losses": 0.3535795856662478,
+        "pure_premium_gini_without_largest_policy": 0.3358221521592135
+      },
+      "gbm_additive": {
+        "label": "Additive GBM (no interactions)",
+        "poisson_deviance": 0.4487621261198494,
+        "null_deviance": 0.4770300891687389,
+        "deviance_explained": 0.059258239030893334,
+        "gini": 0.31864740853734896,
+        "a_over_e": 1.0016996944194128,
+        "train_deviance": 0.4482626937900058,
+        "pure_premium_a_over_e_capped_losses": 0.9769862425221727,
+        "pure_premium_gini_capped_losses": 0.3502240985029822,
+        "pure_premium_gini_all_losses": 0.3550331322661082,
+        "pure_premium_gini_without_largest_policy": 0.33812754471742523
+      },
+      "gbm": {
+        "label": "GBM",
+        "poisson_deviance": 0.4478039606930097,
+        "null_deviance": 0.4770300891687389,
+        "deviance_explained": 0.06126684487902623,
+        "gini": 0.31974923224161933,
+        "a_over_e": 1.0000046634622366,
+        "train_deviance": 0.44146944264531884,
+        "pure_premium_a_over_e_capped_losses": 0.9750776390699918,
+        "pure_premium_gini_capped_losses": 0.34793966434928714,
+        "pure_premium_gini_all_losses": 0.3515255122549088,
+        "pure_premium_gini_without_largest_policy": 0.3339117807378118
+      }
+    },
+    "differences": {
+      "glm_to_gbm": {
+        "deviance_reduction": 0.0061069398213725425,
+        "bootstrap_95_low": 0.004903456760514029,
+        "bootstrap_95_high": 0.00731778494925751
+      },
+      "glm_to_glm_ladder": {
+        "deviance_reduction": 0.004000972531764678,
+        "bootstrap_95_low": 0.003128795555973678,
+        "bootstrap_95_high": 0.004859068321065843
+      },
+      "glm_ladder_to_gbm": {
+        "deviance_reduction": 0.0021059672896078653,
+        "bootstrap_95_low": 0.0009848265053520784,
+        "bootstrap_95_high": 0.003269716126735207
+      },
+      "glm_to_gbm_additive": {
+        "deviance_reduction": 0.005148774394532883,
+        "bootstrap_95_low": 0.004107455970109328,
+        "bootstrap_95_high": 0.0062356063339560645
+      },
+      "gbm_additive_to_gbm": {
+        "deviance_reduction": 0.0009581654268396592,
+        "bootstrap_95_low": 8.492489100265012e-05,
+        "bootstrap_95_high": 0.0017945690669524692
+      }
+    },
+    "gap_closed": {
+      "glm_to_gbm_gap_deviance": 0.0061069398213726145,
+      "glm_ladder": {
+        "share_of_gap_closed_deviance": 0.6551517861306531,
+        "share_of_gap_closed_gini": 0.7888694014474044
+      },
+      "decomposition": {
+        "shape_portion": 0.005148774394532929,
+        "interaction_portion": 0.0009581654268396855,
+        "shape_share_of_gap": 0.8431021993230768,
+        "interaction_share_of_gap": 0.15689780067692322
+      }
+    }
+  },
+  "cost_of_leaving_out_bonus_malus": {
     "glm": {
-      "poisson_deviance": 0.4539109005143823,
-      "null_deviance": 0.4770300891687389,
-      "deviance_explained": 0.04846484357966496,
-      "gini": 0.2965680674439375,
-      "a_over_e": 0.9997200508997106,
-      "label": "GLM (statsmodels)",
-      "train_deviance": 0.45467686618913944,
-      "pure_premium_gini_capped_losses": 0.3351129028550457,
-      "pure_premium_a_over_e_capped_losses": 0.9753812346914887
-    },
-    "glm_int": {
-      "poisson_deviance": 0.4533926249001202,
-      "null_deviance": 0.4770300891687389,
-      "deviance_explained": 0.04955130673163355,
-      "gini": 0.29809009834620226,
-      "a_over_e": 1.0002779217012487,
-      "label": "GLM + interaction",
-      "train_deviance": 0.45353335305612136,
-      "pure_premium_gini_capped_losses": 0.32760814230495117,
-      "pure_premium_a_over_e_capped_losses": 0.9760474717505288
-    },
-    "glm_ladder": {
-      "poisson_deviance": 0.44990992798261764,
-      "null_deviance": 0.4770300891687389,
-      "deviance_explained": 0.056852097596988505,
-      "gini": 0.3148549790427384,
-      "a_over_e": 1.0005438726584224,
-      "label": "GLM + ladder indicator",
-      "train_deviance": 0.4509325369796074,
-      "pure_premium_gini_capped_losses": 0.3479680619295442,
-      "pure_premium_a_over_e_capped_losses": 0.9761052636796079
-    },
-    "glm_both": {
-      "poisson_deviance": 0.4493984270505805,
-      "null_deviance": 0.4770300891687389,
-      "deviance_explained": 0.05792435895670378,
-      "gini": 0.31549501870116803,
-      "a_over_e": 1.0010899740453247,
-      "label": "GLM + ladder indicator + interaction",
-      "train_deviance": 0.4498070464866385,
-      "pure_premium_gini_capped_losses": 0.3404721218175226,
-      "pure_premium_a_over_e_capped_losses": 0.9767711547181475
-    },
-    "gbm_additive": {
-      "poisson_deviance": 0.4487621261198494,
-      "null_deviance": 0.4770300891687389,
-      "deviance_explained": 0.059258239030893334,
-      "gini": 0.31864740853734896,
-      "a_over_e": 1.0016996944194128,
-      "label": "Additive GBM (no interactions)",
-      "train_deviance": 0.4482626937900058,
-      "pure_premium_gini_capped_losses": 0.3502240985029822,
-      "pure_premium_a_over_e_capped_losses": 0.9769862425221727
-    },
-    "gbm_monotone": {
-      "poisson_deviance": 0.451058602092644,
-      "null_deviance": 0.4770300891687389,
-      "deviance_explained": 0.05444412766782114,
-      "gini": 0.3100943989738686,
-      "a_over_e": 0.9994067910283794,
-      "label": "GBM, BonusMalus constrained",
-      "train_deviance": 0.44690935917005353,
-      "pure_premium_gini_capped_losses": 0.34204102514324797,
-      "pure_premium_a_over_e_capped_losses": 0.9747549878306466
+      "deviance_reduction": 0.014749106839052065,
+      "bootstrap_95_low": 0.012871310555585318,
+      "bootstrap_95_high": 0.016756637039749517
     },
     "gbm": {
-      "poisson_deviance": 0.4478039606930097,
-      "null_deviance": 0.4770300891687389,
-      "deviance_explained": 0.06126684487902623,
-      "gini": 0.31974923224161933,
-      "a_over_e": 1.0000046634622366,
-      "label": "GBM",
-      "train_deviance": 0.44146944264531884,
-      "pure_premium_gini_capped_losses": 0.34793966434928714,
-      "pure_premium_a_over_e_capped_losses": 0.9750776390699918
+      "deviance_reduction": 0.020528285521078396,
+      "bootstrap_95_low": 0.01818071892759147,
+      "bootstrap_95_high": 0.022894216197814135
     }
   },
-  "differences": {
-    "glm_to_glm_int": {
-      "deviance_reduction": 0.0005182756142620801,
-      "bootstrap_95_low": -8.836236114818676e-06,
-      "bootstrap_95_high": 0.001006450500351211
-    },
-    "glm_to_glm_ladder": {
-      "deviance_reduction": 0.004000972531764678,
-      "bootstrap_95_low": 0.003128795555973678,
-      "bootstrap_95_high": 0.004859068321065843
-    },
-    "glm_to_glm_both": {
-      "deviance_reduction": 0.004512473463801832,
-      "bootstrap_95_low": 0.0035645818361034606,
-      "bootstrap_95_high": 0.005575515340256233
-    },
-    "glm_to_gbm_additive": {
-      "deviance_reduction": 0.005148774394532883,
-      "bootstrap_95_low": 0.004107455970109328,
-      "bootstrap_95_high": 0.0062356063339560645
-    },
-    "glm_to_gbm_monotone": {
-      "deviance_reduction": 0.0028522984217383535,
-      "bootstrap_95_low": 0.0018530891771673856,
-      "bootstrap_95_high": 0.0038740449073111326
-    },
-    "glm_to_gbm": {
-      "deviance_reduction": 0.0061069398213725425,
-      "bootstrap_95_low": 0.004903456760514029,
-      "bootstrap_95_high": 0.00731778494925751
-    },
-    "glm_int_to_gbm": {
-      "deviance_reduction": 0.005588664207110463,
-      "bootstrap_95_low": 0.0043970986787435365,
-      "bootstrap_95_high": 0.006736514199571899
-    },
-    "glm_ladder_to_gbm": {
-      "deviance_reduction": 0.0021059672896078653,
-      "bootstrap_95_low": 0.0009848265053520784,
-      "bootstrap_95_high": 0.003269716126735207
-    },
-    "glm_both_to_gbm": {
-      "deviance_reduction": 0.0015944663575707108,
-      "bootstrap_95_low": 0.0005140844891232927,
-      "bootstrap_95_high": 0.002701424274082494
-    },
-    "gbm_additive_to_gbm": {
-      "deviance_reduction": 0.0009581654268396592,
-      "bootstrap_95_low": 8.492489100265012e-05,
-      "bootstrap_95_high": 0.0017945690669524692
-    }
-  },
-  "gap_closed": {
-    "glm_to_gbm_gap_deviance": 0.0061069398213726145,
+  "other_models_scored_on_the_holdout": {
     "glm_int": {
-      "share_of_gap_closed_deviance": 0.08486666471614401,
-      "share_of_gap_closed_gini": 0.06565808558580181,
-      "share_of_interaction_portion_closed": 0.5409041066859668
-    },
-    "glm_ladder": {
-      "share_of_gap_closed_deviance": 0.6551517861306531,
-      "share_of_gap_closed_gini": 0.7888694014474044,
-      "share_of_shape_portion_closed": 0.7770727993079268
+      "label": "GLM + BonusMalus x Region interaction",
+      "poisson_deviance": 0.4533926249001202,
+      "gini": 0.29809009834620226
     },
     "glm_both": {
-      "share_of_gap_closed_deviance": 0.7389091092742436,
-      "share_of_gap_closed_gini": 0.8164797335431251,
-      "share_of_interaction_portion_closed_by_its_interaction": 0.533833634265275
+      "label": "GLM + ladder indicator + interaction",
+      "poisson_deviance": 0.4493984270505805,
+      "gini": 0.31549501870116803
     },
-    "decomposition": {
-      "shape_portion_glm_to_additive_gbm": 0.005148774394532929,
-      "interaction_portion_additive_gbm_to_gbm": 0.0009581654268396855,
-      "shape_share_of_gap": 0.8431021993230768,
-      "interaction_share_of_gap": 0.15689780067692322
+    "gbm_monotone": {
+      "label": "GBM with BonusMalus constrained to be increasing",
+      "poisson_deviance": 0.451058602092644,
+      "gini": 0.3100943989738686
     }
   }
 }

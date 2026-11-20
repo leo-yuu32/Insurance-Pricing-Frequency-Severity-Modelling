@@ -1,11 +1,10 @@
 # Modelling and test environment: the exact versions that produced the numbers in docs/.
-# The deployed app installs requirements.txt only and does not import the modelling libraries.
+# It includes the app's requirements, so the dashboard tests can run.
 # Python 3.13.9
 #
 #   python -m pip install -r requirements-dev.txt
 
-numpy==2.3.4
-pandas==2.3.3
+-r requirements.txt
 scipy==1.16.3
 scikit-learn==1.8.0
 statsmodels==0.15.0

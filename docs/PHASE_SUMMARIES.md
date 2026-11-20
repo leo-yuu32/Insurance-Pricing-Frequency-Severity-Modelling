@@ -1,8 +1,75 @@
 # Phase summaries
 
-Written for Leo's review. Each phase starts with the plan that was followed (plan mode was skipped for this run, at Leo's request), then what changed, the key numbers, and anything surprising. The reasoning behind each choice is in `docs/DECISIONS.md` (entries D1 to D29).
+Written for Leo's review. Each phase starts with the plan that was followed (plan mode was skipped for this run, at Leo's request), then what changed, the key numbers, and anything surprising. The reasoning behind each choice is in `docs/DECISIONS.md` (entries D1 to D33). The newest phase is first.
 
-## Review of the five decisions before Phase 5 (13 November 2026): stopped, waiting for Leo
+## Phase 5: final model, dashboard, Excel engine and write-up (17 to 20 November 2026)
+
+**Plan** (from your decisions of 17 November):
+
+1. Retune the GBM on the eight factors other than `BonusMalus`, on training cross-validation only, with the same 30 parameter draws as before.
+2. Write the full specification of both final models into `DECISIONS.md` (D31) and commit it before any holdout scoring.
+3. Score the final pair once on the holdout, with a bootstrap interval for the gap.
+4. Build the results file and the three-part dashboard, the Excel engine for the final GLM (new file), and move the legacy pipeline to `legacy/`.
+5. Write the README, `DECISIONS.md` (D32, D33, and notes on the entries D30 overturns), `INTERVIEW_NOTES.md` and `CV_SUMMARY.md`.
+
+**What changed.**
+
+- New code: `src/run_final.py`, `build_rating_engine.py` and `dashboard.py`.
+- Rewritten: `src/summarise_models.py` and `src/config.py`.
+- `gbm.py` and `tune_gbm.py` accept a feature list (`tune_gbm.py final`).
+- `legacy/` holds the old pipeline, its config, requirements and charts.
+- `requirements.txt` is pinned for the app; `requirements-dev.txt` includes it.
+- New workbook `artifacts/rating_engine_final_glm.xlsx`.
+- 12 new tests (60 in total, all passing).
+- Commit `f954934` holds the specification and `2f9c9da` the scores, in that order.
+
+**Key numbers** (holdout, 133,726 policies):
+
+| | Final GLM (55 parameters) | Final GBM |
+|---|---|---|
+| Poisson deviance | 0.46866 | 0.46833 |
+| Deviance explained | 1.75% | 1.82% |
+| Gini | 0.179 | 0.183 |
+| Actual / expected | 0.998 | 0.998 |
+
+- **The gap is not significant.** GLM minus GBM is 0.00033, with a 95% interval of -0.00019 to 0.00085. Without `BonusMalus` the GBM does not beat the GLM. Cross-validation on training data had predicted 0.00052.
+- **Tuning chose a heavily regularised GBM:** learning rate 0.1264, 17 leaves, at least 1,791 policies per leaf, L2 13.36, 92 trees. All 30 trials lie within 0.0004 of each other.
+- **Leaving out `BonusMalus` costs a lot:** 0.0147 of deviance for the GLM and 0.0205 for the GBM. That is an upper bound, since part of it may be the leak.
+- **Excel:** the new workbook reproduces Python for 100 of 100 holdout policies, the largest relative difference being 1.6e-15, checked after recalculating in Excel itself.
+- **NumPy solver:** on the final 534,900 by 55 matrix it matches statsmodels to 6.0e-12 for coefficients and 9.1e-9 for standard errors.
+
+**Surprising.**
+
+- **The final double-lift chart looks nothing like the nine-factor one.** The actual frequency is nearly flat across the ten groups (0.067 to 0.077) while the two models fan out in opposite directions, and in both end groups the actual lies between them.
+- **Driver age takes over.** Without `BonusMalus` the driver-age relativities become steep and monotone (3.84 at 18 to 19 against 41 to 50). The dip at 26 to 40 disappears, as D11 predicted.
+- **Mis-calibration by record length is worse without `BonusMalus`.** Actual over expected is 0.80 for full-year records and 1.43 for records under half a year, against 0.86 and 1.32 with it. So the factor carries information about the observed period, one more sign of the timing problem.
+
+**Where I departed from the letter of the instructions, and why.**
+
+- **Dashboard.** It has only the three parts you asked for. `CLAUDE.md` also asks for SHAP plots, dislocation between models, scenario sliders and rebuilt legacy tabs. Your instruction to keep it simple took precedence. Consequence: the CV line about dislocation analysis and Lorenz curves no longer matches any app (`CV_SUMMARY.md`, section 8).
+- **Excel.** The engine is a new file. The hand-built `Sample_Policy` and `Sensitivity_OneWay` sheets stay, untouched, in `artifacts/rating_engine.xlsx`, because they use what-if data tables, array formulas and a chart that openpyxl cannot copy without damage. That workbook stays in `artifacts/`, not `legacy/`, because it has your uncommitted edits.
+- **GLM bands.** The final GLM keeps the bands chosen with `BonusMalus` present. Re-choosing them would have added a selection step for one model only (D31).
+- **Additive GBM.** It was not rebuilt without `BonusMalus`: with no significant gap there is nothing to split.
+- **Earlier entries.** D17's "is this leakage?" argument now carries a correction, and D20 and D26 are marked as superseded. The original text is kept.
+- **The first `run_final.py` run** stopped with an error before any holdout metric was computed. It was fixed (a missing column) and run again. The fix is in the scoring commit.
+- **`requirements.txt`** had your uncommitted one-line change (a trailing newline). The new file includes it.
+
+**Before this goes live.** I have not pushed anything or touched `main`. To deploy:
+
+1. Review the branches.
+2. Merge `phase-5-final-model` (which contains every earlier branch) into `main` and push.
+3. In the Streamlit Community Cloud settings, select Python 3.13 and check that the app's main file is `src/dashboard.py`.
+
+The app then reads `outputs/model_comparison.json` and fits nothing.
+
+**Still open.**
+
+- `CLAUDE.md` is untracked, and its "Current state" section describes the project before the rebuild.
+- The repository URL: the git remote is `github.com/idk-what-to-put-here-32/...`, while the old README gave `github.com/leo-yuu32/...`. `CV_SUMMARY.md` uses the remote.
+
+---
+
+## Review of the five decisions before Phase 5 (13 November 2026): decided on 17 November, see Phase 5 above
 
 The stop rule applies. The leakage check asked for in decision 3 came back the wrong way, which undoes decision 1 and changes how the headline numbers below can be read. Phase 5 and the CV summary have not been started. The evidence and the options are in `docs/DECISIONS.md`, D30.
 
@@ -27,30 +94,19 @@ The stop rule applies. The leakage check asked for in decision 3 came back the w
 
 ---
 
-**State of the repo.** The review is on a sixth local branch, `bonus-malus-timing-check`, on top of the five below. Five stacked local branches, nothing pushed, `main` untouched:
+**State of the repo.** Seven stacked local branches, nothing pushed, `main` untouched:
 
-`phase-0-audit` -> `phase-1-foundations` -> `phase-3-gbm` -> `phase-4-shap-interactions` -> `phase-2-numpy-glm` (the tip, which contains everything).
+`phase-0-audit` -> `phase-1-foundations` -> `phase-3-gbm` -> `phase-4-shap-interactions` -> `phase-2-numpy-glm` -> `bonus-malus-timing-check` -> `phase-5-final-model` (the tip, which contains everything).
 
-42 tests pass (`python -m pytest`). The legacy pipeline and the dashboard are unchanged and still run.
+60 tests pass (`python -m pytest`). The legacy pipeline is in `legacy/` and still imports.
 
-**To reproduce everything** (PowerShell, from the repo root, after `python -m pip install -r requirements-dev.txt`):
-
-```powershell
-python src\run_glm.py            # baseline GLMs; first run downloads the data and builds the split (about 5 minutes)
-python src\tune_gbm.py           # about 35 minutes
-python src\tune_gbm.py monotone  # about 75 minutes
-python src\tune_gbm.py additive  # one to two hours
-python src\run_gbm.py            # about 2 minutes
-python src\run_interactions.py   # about 20 minutes
-python src\summarise_models.py   # writes outputs\model_comparison.json
-python -m pytest
-```
+**To reproduce everything:** see "Reproducing the results" in `README.md`.
 
 ---
 
-## Headline
+## Headline of Phases 1 to 4 (nine factors, now set aside)
 
-**Read with the review above.** The numbers are correct as computed, but the rows that depend on the bonus-malus sawtooth (the ladder indicator and the unconstrained GBM) cannot be read as pricing improvements until D30 is settled.
+**These are the nine-factor results.** They are correct as computed and stay in the results as the analysis that exposed the `BonusMalus` timing problem (D30). They are not pricing results. The final results are in the Phase 5 section.
 
 Holdout of 133,726 policies, scored once. Poisson deviance per policy-year, lower is better.
 
@@ -141,17 +197,9 @@ Holdout of 133,726 policies, scored once. Poisson deviance per policy-year, lowe
 
 ---
 
-## Not done
+## Decisions taken (17 November 2026)
 
-- **Phase 5:** dashboard rebuild, README, `INTERVIEW_NOTES.md`, moving the legacy pipeline to `legacy/`.
-- **Excel regeneration.** It is for the final GLM only, and which GLM is final is your call (see below). The hand-built `Sample_Policy` and `Sensitivity_OneWay` sheets are untouched.
-
-I stopped here because Phase 5 and the Excel workbook both depend on the decisions below.
-
-## Decisions waiting for you
-
-1. **Which GLM is the final one?** Baseline, with the ladder indicator, or with the indicator and an interaction.
-2. **Which interaction, if any?** `BonusMalus` by `Region` (the criterion's choice) or driver age by bonus-malus (smaller and more intuitive).
-3. **Is the grouped split acceptable?** It departs from "only group if material".
-4. **`CLAUDE.md`** has the approved edits applied and is still untracked. Two wordings go beyond what you approved: the legacy move is deferred to Phase 5 so the deployed app keeps working, and modelling dependencies go in `requirements-dev.txt`. `requirements.txt` is untouched.
-5. **The CV.** Supported now: statsmodels GLMs on nine factors; GLM against a tuned LightGBM on a grouped holdout with a bootstrap interval; a double-lift chart; SHAP; the NumPy solver validated on the real design matrix. Still to come off: the Gini 0.43 to 0.48 line and "isotonic calibration".
+1. **The final model** leaves out `BonusMalus` in both the GLM and the GBM. Neither GLM has an interaction. Driver age by bonus-malus was never scored on the holdout.
+2. **Accepted:** the grouped split and both `CLAUDE.md` wordings. The monotone constraint stays closed.
+3. **The `BonusMalus` timing evidence** is described as strong but unproven (D30).
+4. **Phase 5 and `CV_SUMMARY.md`** are done (see the top of this file).

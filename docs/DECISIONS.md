@@ -283,6 +283,8 @@ Across all values below 100, the off-ladder values hold 8% of training exposure 
 
 **Is this leakage?** It would be if the recorded score had already been updated for the claims being predicted. It has not: 80% of the claims below a score of 100 happen to policies on ladder values, which a policy could not hold after an at-fault claim in the same period. The score describes the past.
 
+**Correction (13 November 2026).** That argument was wrong. That most claims sit on ladder values shows only that most claims have not moved the score. It says nothing about the claims that have. D30 tests the question directly and finds strong, unproven evidence that some have.
+
 **Why not keep the constraint anyway.** A pricing team might: "a worse score never lowers the price" is easy to explain to a customer. But the purpose of the GBM in this project is to measure what the data support, so the benchmark is the unconstrained model. The constrained model is reported as what a team would give up for that rule.
 
 **Effect on the holdout.** Unconstrained 0.44780, constrained 0.45106 (D20). This was read after the decision, which was made on the cross-validation table above.
@@ -316,6 +318,8 @@ The final model is fitted once on all training rows with these parameters and 16
 **What the parameters do** (for the interview notes): the learning rate scales each tree's contribution, so a lower rate needs more trees and usually generalises a little better; `num_leaves` sets how complex one tree can be, and so how high an order of interaction it can represent; `min_data_in_leaf` stops a leaf being fitted to a handful of policies, which matters when only 4% of policies have a claim; `lambda_l2` shrinks leaf values towards zero.
 
 ### D20. GLM versus GBM on the holdout
+
+**Superseded as a pricing result (D30 to D32).** The figures below are correct as computed and stay in the results as a labelled comparison. But the gap runs almost entirely through `BonusMalus`, which appears to be recorded after some of the claims it predicts, so the reading below (including "the commercial meaning of the gap") should not be quoted as a finding about GLMs and GBMs.
 
 Scored once, on the 133,726 holdout policies.
 
@@ -445,6 +449,8 @@ The split is approximate, because the three models also differ in how they are r
 
 ### D26. Results on the holdout
 
+**Superseded as a pricing result (D30 to D32).** These are the nine-factor results. They are kept because they are how the timing problem was found: the ladder indicator closing two thirds of the gap was the result that looked too good. "How to state the result" and "What this says about the trade-off" below were written before D30 and should not be quoted. Neither GLM in the final results has an interaction.
+
 | Model | Parameters | Poisson deviance | Deviance explained | Gini | Actual / expected |
 |---|---|---|---|---|---|
 | GLM | 63 | 0.45391 | 4.85% | 0.297 | 1.000 |
@@ -536,6 +542,8 @@ Seven tests in `tests/test_irls.py`. The tolerance in the tests is a relative 1e
 | Iterations, NumPy and statsmodels | 7 and 7 | 7 and 9 |
 
 The other tests use synthetic data with known coefficients, for both families: the solver matches statsmodels and recovers the true values to within four standard errors.
+
+**On the final frequency GLM (added in Phase 5).** The test now runs on both frequency design matrices. On the final model's matrix (534,900 by 55, without `BonusMalus`): largest coefficient difference 4.0e-13 absolute and 6.0e-12 relative, largest standard error difference 9.1e-9 relative, deviance difference 2.9e-11 (of 132,754), 7 iterations for both. The severity model is unchanged.
 
 ---
 
@@ -649,3 +657,50 @@ The cross-validated gap is 8% of the nine-factor gap (0.006614). The spread acro
 - The share-of-gap-closed ratio is not computed for the final pair, because no term is added to the final GLM.
 
 **What the holdout had already been used for.** Before this decision, seven nine-factor models were scored on the same holdout: the GLM, the GLM with the interaction, with the ladder indicator, with both, the additive GBM, the constrained GBM and the GBM. Two choices were then made with those scores in view. Dropping the interaction (Leo's decision of 13 November) followed its holdout interval. The `BonusMalus` investigation rests on training data alone (D30), but what prompted it was a holdout result that looked too good. The final models have not been scored before. Their specification was not chosen on the holdout, but the route to it passed through holdout results, so the final figures may be mildly optimistic. With 133,726 policies and differences of a few thousandths, I expect that effect to be small, but it cannot be measured.
+
+### D32. Results of the final models on the holdout
+
+Scored once, after D31 was committed (`python src/run_final.py`; the first run stopped with an error before any holdout metric was computed, and the second run is the one reported). Holdout: 133,726 policies, 70,827 policy-years, 5,215 claims.
+
+| Frequency model | Parameters | Poisson deviance | Deviance explained | Gini | Actual / expected |
+|---|---|---|---|---|---|
+| Null (training frequency) | 1 | 0.47703 | 0 | 0 | |
+| Final GLM | 55 | 0.46866 | 1.75% | 0.179 | 0.998 |
+| Final GBM | | 0.46833 | 1.82% | 0.183 | 0.998 |
+
+**The GBM does not beat the GLM.** The GLM's deviance exceeds the GBM's by 0.00033, with a 95% paired bootstrap interval of -0.00019 to 0.00085. The interval includes zero. On the eight rating factors other than `BonusMalus`, this holdout cannot tell the two models apart. The cross-validated gap on the training data was 0.00052, so the holdout agrees with what training data predicted.
+
+**Overfitting.** Training against holdout deviance: GLM 0.46954 and 0.46866; GBM 0.46611 and 0.46833. The GBM's holdout score is close to its cross-validated score (0.46965). The holdout is a little easier than the training data for both models (its null deviance is 0.47703 against 0.47925 in cross-validation), which is why both score better there.
+
+**Rebalancing factors.** Frequency: GLM 1.0000 (balance property), GBM 0.99996. Pure premium on capped losses: GLM 1.0017, GBM 1.0022. Large-loss load 1.1917. None needed investigating.
+
+**The double-lift chart** (`plots/double_lift_final_glm_vs_gbm.png`; the dashboard draws the same table):
+
+| Group | GBM / GLM | Actual | GLM | GBM |
+|---|---|---|---|---|
+| 1 | 0.49 to 0.86 | 0.0757 | 0.0862 | 0.0699 |
+| 2 | 0.86 to 0.91 | 0.0671 | 0.0786 | 0.0698 |
+| 5 | 0.97 to 1.00 | 0.0754 | 0.0728 | 0.0716 |
+| 6 | 1.00 to 1.02 | 0.0760 | 0.0717 | 0.0725 |
+| 9 | 1.10 to 1.17 | 0.0758 | 0.0696 | 0.0785 |
+| 10 | 1.17 to 1.98 | 0.0772 | 0.0686 | 0.0864 |
+
+The actual frequency barely moves across the ten groups (0.067 to 0.077), while the two models' predictions fan out in opposite directions. The GBM is closer to the actual in six groups and the GLM in four, and in both end groups the actual lies between the two. So the GBM's departures from the GLM point the right way on average but are too large. This is what a small, not significant deviance difference looks like on a double-lift chart. Compare D20, where the actual line followed the GBM to 0.124 in the top group.
+
+**What leaving out `BonusMalus` costs.** Measured against the nine-factor models on the same holdout: 0.01475 of deviance for the GLM (interval 0.01287 to 0.01676) and 0.02053 for the GBM (0.01818 to 0.02289). Deviance explained falls from 4.85% to 1.75% for the GLM. This is an upper bound on the price of the decision, because part of what `BonusMalus` contributed may be the leak. The final GLM's actual over expected by bonus-malus band runs from 0.76 at 50 to 4.10 at 120 and above: a real insurer, which knows each driver's coefficient at the start of the policy, would never price without it. The final model is what this dataset supports cleanly, not what an insurer would use.
+
+**Driver age now carries what bonus-malus used to.** The final GLM's driver-age relativities (against 41 to 50) are 3.84 at 18 to 19, 2.60 at 20 to 21, 1.95 at 22 to 23, 1.42 at 24 to 25, 1.04 at 26 to 30 and 0.90 at 31 to 40. The dip at 26 to 40 in the nine-factor model (D11) has gone, as D11 explained it would: young drivers can only have high bonus-malus scores, so with that factor present the model had already charged them through it.
+
+**Record length.** Actual over expected on the holdout by length of record, for both final models: about 0.80 for full-year records, 0.99 for records of half a year to a year, 1.43 for records under half a year. For the nine-factor models the same figures are about 0.86, 0.96 and 1.32. On the training data the observed frequency is 0.054 claims per policy-year for full-year records, 0.079 for half to one year and 0.112 for under half a year (and 0.299 for records of 0.05 years or less). Claim frequency is not proportional to exposure in this data, so the log-exposure offset misprices short and long records in opposite directions. Both models inherit this equally, because neither is allowed to use exposure as a rating factor (D3). That `BonusMalus` reduced the misfit is one more sign that it carries information about the period being observed.
+
+**Pure premium (secondary).** Capped losses: Gini 0.199 (GLM) and 0.205 (GBM); actual over expected 0.974 and 0.973. All losses: Gini 0.207 and 0.212; without the policy with the largest holdout loss, 0.183 and 0.188. Actual over expected on all losses after the large-loss load: 0.834 and 0.833 (the holdout has few large claims; D14).
+
+**What it means for GLM against GBM.** With `BonusMalus` the GBM's lead was 0.0061 and well clear of zero. Without it the lead is 0.0003 and within noise. Almost all of the GBM's apparent advantage came through the fine structure of one factor that may contain the outcome. On the remaining factors, a GLM with bands chosen by cross-validation captures what the data support. This is one dataset and one holdout, and the holdout had been used before (D31), so the right statement is narrow: on freMTPL2 without `BonusMalus`, a tuned GBM did not beat a well-specified GLM.
+
+### D33. Phase 5 practical choices
+
+- **The dashboard reads one precomputed file**, `outputs/model_comparison.json`, written by `src/summarise_models.py`. It fits no model and imports only `streamlit`, `altair`, `pandas`, `json` and `pathlib`; a test parses its imports and another runs the app headless on the saved results. At Leo's request it has three parts: the headline table for the final pair, their double-lift chart, and a short section on the nine-factor comparison and why it was set aside. It has no sliders, so the "commercial scenario overlay" in CLAUDE.md does not arise, and the Lorenz curve, one-way and dislocation charts of the legacy app are not rebuilt.
+- **`requirements.txt`** now pins only what the app imports: `streamlit` 1.53.0, `altair` 6.0.0, `pandas` 2.3.3 and `numpy` 2.3.4. This resolves the old `numpy<2.0.0` pin. The legacy app's requirements are kept in `legacy/requirements.txt`.
+- **The Python version.** Streamlit Community Cloud ignores `runtime.txt`; the version is chosen in the app's Advanced settings. The pinned packages have wheels for Python 3.11 to 3.14. The pipeline was run on 3.13.9, so 3.13 is the version to select.
+- **The legacy pipeline** moved to `legacy/` with its own `config.py`, `requirements.txt` and charts. `src/config.py` keeps only the dataset IDs and the seed. The audit scripts now import the legacy code from `legacy/`.
+- **The Excel engine is a new file**, `artifacts/rating_engine_final_glm.xlsx`, built by `src/build_rating_engine.py`. The legacy workbook `artifacts/rating_engine.xlsx` is not touched. Its hand-built `Sample_Policy` and `Sensitivity_OneWay` sheets use what-if data tables, array formulas and a chart, which openpyxl cannot carry from one workbook to another without damage. Copying them was therefore not an option, and they stay in the legacy workbook. The new workbook prices from raw rating factors with Excel formulas only (`LOOKUP` for bands, `INDEX`/`MATCH` on the rating table) and has a one-policy calculator. After it was recalculated in Excel, its Reconcile sheet matches Python for 100 of 100 holdout policies, the largest relative difference being 1.6e-15. A one-way sensitivity sheet can be rebuilt by hand on the Calculator sheet if wanted.
