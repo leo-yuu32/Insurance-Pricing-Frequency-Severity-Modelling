@@ -38,7 +38,7 @@ With `BonusMalus` the GBM leads by 0.0061 (interval 0.0049 to 0.0073), and one e
 
   The evidence is strong but unproven, so the final models leave the factor out. A real insurer knows each driver's coefficient at the start of the policy and would use it; the final model is what this dataset supports cleanly. Details: `docs/DECISIONS.md`, D30 to D32.
 - **Holdout reuse.** The holdout was used to compare several nine-factor models, and one selection decision (dropping an interaction term) was made with those results in view. The final models were specified and committed before they were scored, but the final figures may be mildly optimistic.
-- **Exposure.** Claim frequency is not proportional to exposure in this data. Both models over-predict full-year records (actual over expected about 0.80) and under-predict records under half a year (about 1.43), because exposure enters only as an offset.
+- **Mis-calibration by length of record.** Claim frequency is not proportional to exposure in this data: on the training data it is 0.054 claims per policy-year for full-year records and 0.112 for records under half a year. Both models take exposure as a log offset with its coefficient fixed at 1, which assumes proportionality. So on the holdout both over-predict full-year records (actual over expected 0.80) and under-predict records under half a year (1.43). The same pattern appears on the training data (0.77 and 1.42 for the final GLM). The standard fix is to fit log(exposure) as a covariate with its own coefficient instead of as a fixed offset; it was not applied because the final models had already been specified and scored on the holdout, and changing them in response to this result would be one more choice made with the holdout in view. Before scoring, exposure had also been kept out of the models deliberately (`docs/DECISIONS.md`, D3), because it is not known why short records claim more, and a covariate could learn how records are created rather than risk.
 
 ## Method
 
@@ -83,7 +83,7 @@ tests/                    pytest suite
 outputs/                  results (JSON and model summaries)
 plots/                    charts
 artifacts/                holdout IDs and Excel workbooks
-docs/                     DECISIONS.md, AUDIT.md, INTERVIEW_NOTES.md, CV_SUMMARY.md
+docs/                     DECISIONS.md, AUDIT.md, INTERVIEW_NOTES.md, CV_SUMMARY.md, REVIEW_PACK.md
 legacy/                   the first version of the project, archived
 ```
 
