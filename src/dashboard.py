@@ -11,6 +11,8 @@ import textwrap
 from pathlib import Path
 
 import altair as alt
+import lightgbm as lgb  # prediction only: the saved final GBM is loaded, never trained, here
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -35,7 +37,14 @@ RECORD_LENGTHS = ["under half a year", "half to one year", "full year"]
 # ---------------------------------------------------------------------------------------------
 
 REQUIRED_FILES = ["models", "driver_age", "shap", "score_rates", "price_ratio", "lift", "double_lift", "lorenz",
-                  "relativities", "record_length", "timing_checks"]
+                  "relativities", "record_length", "timing_checks", "rating_table", "explore"]
+GBM_MODEL_PATH = ROOT / "artifacts" / "gbm_final.txt"   # written by src/save_final_gbm.py
+GBM_INFO_PATH = ROOT / "artifacts" / "gbm_final.json"
+# The GLM's factors in the order the waterfall applies them: (display name, term, input).
+GLM_STEPS = [("Driver age", "DrivAgeBand", "DrivAge"), ("Vehicle age", "VehAgeBand", "VehAge"),
+             ("Vehicle power", "VehPowerBand", "VehPower"), ("Population density", "LogDensity", "Density"),
+             ("Brand group", "VehBrand", "VehBrand"), ("Fuel type", "VehGas", "VehGas"), ("Region", "Region", "Region")]
+ORDERED_FACTORS = {"DrivAge", "VehAge", "VehPower", "Density", "Area"}
 
 
 def data_version(path=DATA_DIR):
@@ -52,6 +61,109 @@ def _read_files(path, version):
 def load_data(path=DATA_DIR):
     """Every precomputed file, keyed by file name without the extension."""
     return _read_files(str(path), data_version(path))
+
+
+@st.cache_resource
+def _load_gbm(model_path, info_path, version):
+    return lgb.Booster(model_file=model_path), json.loads(Path(info_path).read_text(encoding="utf-8"))
+
+
+def load_gbm(model_path=GBM_MODEL_PATH, info_path=GBM_INFO_PATH):
+    """The saved final GBM (for prediction only) and its encodings. Reloaded if either file changes."""
+    version = tuple(Path(p).stat().st_mtime_ns for p in (model_path, info_path))
+    return _load_gbm(str(model_path), str(info_path), version)
+
+
+# ---------------------------------------------------------------------------------------------
+# Pricing one driver (the "Try it yourself" tab)
+# ---------------------------------------------------------------------------------------------
+
+def band_of(value, band):
+    """The label of the right-closed band (lo, hi] that holds `value`, as in the GLM's design."""
+    for lo, hi, label in zip(band["edges"][:-1], band["edges"][1:], band["labels"]):
+        if lo < value <= hi:
+            return label
+    raise ValueError(f"{value} is outside the bands {band['edges']}")
+
+
+def area_from_density(density, bounds):
+    """The area type (A to F) whose range of training densities holds `density` (the nearest otherwise).
+    In the data the area type is a banding of density, so it is not a separate input."""
+    for b in bounds:
+        if b["min"] <= density <= b["max"]:
+            return b["area"]
+    return min(bounds, key=lambda b: min(abs(density - b["min"]), abs(density - b["max"])))["area"]
+
+
+def severity_of(table, driver):
+    """Expected cost of one claim (capped claims) from the shared Gamma GLM, which uses driver age only."""
+    sev = table["severity"]
+    band = band_of(driver["DrivAge"], table["bands"]["DrivAgeBand"])
+    return sev["base"] * sev["relativities"]["DrivAgeBand"][band]
+
+
+def glm_price(table, driver):
+    """Expected claims cost per year from the final GLM's relativity table (no statsmodels), with the
+    waterfall from the base (every factor at its reference level and the median density) to the price.
+    Price = frequency x severity x the GLM's rebalancing factor x the large-loss load."""
+    freq, sev, bands = table["frequency"], table["severity"], table["bands"]
+    beta, median = freq["log_density_coefficient"], table["inputs"]["density"]["default"]
+    scale = table["glm_pure_premium_rebalance_factor"] * table["large_loss_load"]
+    base = freq["base"] * median ** beta * sev["base"] * scale
+    frequency, multipliers = freq["base"] * driver["Density"] ** beta, []
+    for name, term, source in GLM_STEPS:
+        if term == "LogDensity":
+            multipliers.append((name, term, f"{driver['Density']:,} per km²", (driver["Density"] / median) ** beta))
+            continue
+        level = band_of(driver[source], bands[term]) if term in bands else driver[source]
+        factor = freq["relativities"][term][level]
+        frequency *= factor
+        if term in sev["relativities"]:
+            # Driver age is in both models: one step for the claim rate, one for the cost per claim.
+            multipliers.append((f"{name}: claim rate", term, level, factor))
+            multipliers.append((f"{name}: cost per claim", term, level, sev["relativities"][term][level]))
+        else:
+            multipliers.append((name, term, level, factor))
+    price, steps = base, []
+    for step, term, level, factor in multipliers:
+        steps.append({"step": step, "term": term, "level": level, "factor": factor, "start": price, "end": price * factor})
+        price *= factor
+    return {"base": base, "steps": steps, "price": price, "frequency": frequency, "severity": severity_of(table, driver)}
+
+
+def gbm_features(drivers, info):
+    """The GBM's features for a list of drivers, encoded as in training (gbm.make_features)."""
+    rows = []
+    for d in drivers:
+        coded = {"Area": "ABCDEF".index(d["Area"]) + 1, "VehGas": 1 if d["VehGas"] == "Diesel" else 0,
+                 "VehBrand": info["levels"]["VehBrand"][d["VehBrand"]], "Region": info["levels"]["Region"][d["Region"]]}
+        rows.append({f: float(coded.get(f, d.get(f))) for f in info["features"]})
+    return pd.DataFrame(rows, columns=info["features"])
+
+
+def gbm_frequency(booster, info, drivers):
+    """Predicted claims per year from the saved GBM: base rate x exp(raw score) x rebalancing factor."""
+    raw = booster.predict(gbm_features(drivers, info), raw_score=True)
+    return info["base_rate"] * np.exp(raw) * info["frequency_rebalance_factor"]
+
+
+def gbm_price(booster, info, table, driver):
+    """Expected claims cost per year from the GBM: its frequency x the shared severity x the GBM's
+    rebalancing factor x the large-loss load."""
+    frequency = float(gbm_frequency(booster, info, [driver])[0])
+    severity = severity_of(table, driver)
+    price = frequency * severity * table["gbm_pure_premium_rebalance_factor"] * table["large_loss_load"]
+    return {"price": price, "frequency": frequency, "severity": severity}
+
+
+def largest_model_gap(rows, min_exposure=2000):
+    """Among groups with at least `min_exposure` policy-years: the largest relative gap between the two
+    models' average predictions, and its group."""
+    large = [r for r in rows if r["exposure"] >= min_exposure]
+    if not large:
+        return None
+    worst = max(large, key=lambda r: abs(r["gbm"] / r["glm"] - 1))
+    return abs(worst["gbm"] / worst["glm"] - 1), worst["level"]
 
 
 def model(data, key):
@@ -148,22 +260,19 @@ def driver_age_chart(rows):
     glm = base.transform_filter(alt.datum.series == "GLM").mark_line(interpolate="step", strokeWidth=2.5)
     gbm = base.transform_filter(alt.datum.series == "GBM").mark_line(strokeWidth=2.5)
     return alt.layer(actual, glm, gbm).properties(
-        height=440, title=chart_title("The GLM's prediction moves in steps, the GBM's changes gradually",
-                                      "Holdout drivers aged 18 to 85"))
+        height=440, title=chart_title("Claims per driver per year, by driver age", "Holdout drivers aged 18 to 85"))
 
 
 def shap_chart(rows):
     d = pd.DataFrame(rows).sort_values("mean_abs_shap", ascending=False)
     d["highlight"] = d["factor"] == "No-claims score"
-    ratio = d["mean_abs_shap"].iloc[0] / d["mean_abs_shap"].iloc[1]
     return alt.Chart(d).mark_bar(cornerRadiusEnd=3).encode(
         x=alt.X("mean_abs_shap:Q", title="Average effect (mean |SHAP|)"),
         y=alt.Y("factor:N", sort=list(d["factor"]), title=None),
         color=alt.when(alt.datum.highlight).then(alt.value(GBM_ORANGE)).otherwise(alt.value(MUTED_GREY)),
         tooltip=[alt.Tooltip("factor:N", title="Factor"), alt.Tooltip("mean_abs_shap:Q", title="Mean |SHAP|", format=".3f")],
     ).properties(height=420, title=chart_title(
-        f"The GBM relied on the no-claims score {times(ratio)} as much as on any other factor",
-        "Nine-factor GBM, 10,000 training policies"))
+        "Average effect of each factor on the GBM's prediction", "Mean absolute SHAP value, nine-factor GBM, 10,000 training policies"))
 
 
 def score_chart(rows):
@@ -171,7 +280,6 @@ def score_chart(rows):
     d["x0"], d["x1"] = d["score"] - 0.4, d["score"] + 0.4
     d["highlight"] = d["score"].isin([50, 62])
     d["label"] = d["score"].astype(str) + ": " + d["rate"].map(lambda v: f"{v:.3f}")
-    ratio = d.loc[d["score"] == 62, "rate"].iloc[0] / d.loc[d["score"] == 50, "rate"].iloc[0]
     x_scale, x_axis = alt.Scale(domain=[49, 101], nice=False), alt.Axis(values=[50, 60, 70, 80, 90, 100])
     y = alt.Y("rate:Q", title="Claims per driver per year")
     bars = alt.Chart(d).mark_bar().encode(
@@ -185,7 +293,7 @@ def score_chart(rows):
     labels = alt.Chart(d[d["highlight"]]).mark_text(dy=-8, fontSize=12, color=ACTUAL_GREY, align="left", dx=-6).encode(
         x=alt.X("score:Q", title="No-claims score", scale=x_scale, axis=x_axis), y=y, text="label:N")
     return alt.layer(bars, labels).properties(height=400, title=chart_title(
-        f"Drivers at 62 claim {times(ratio)} as often as drivers at 50",
+        "Claims per driver per year, by no-claims score",
         "Full-year records in the training data, scores with at least 300 such records"))
 
 
@@ -210,8 +318,8 @@ def with_without_chart(data):
     labels = alt.Chart(d).mark_text(dy=-14, fontSize=12, color=ACTUAL_GREY).encode(
         x=alt.X("pct:Q", title=title, scale=scale), y=y, text="label:N")
     return alt.layer(zero, interval, dots, labels).properties(height=300, title=chart_title(
-        f"The GBM's advantage falls from {with_score['pct']:.2f}% to {without['pct']:.2f}%",
-        "Holdout, with 95% paired bootstrap intervals"))
+        "GBM prediction error relative to the GLM, with and without the no-claims score",
+        "Holdout, % below the GLM's error, with 95% paired bootstrap intervals"))
 
 
 def price_ratio_chart(price):
@@ -228,8 +336,7 @@ def price_ratio_chart(price):
         tooltip=[alt.Tooltip("low:Q", title="Ratio from", format=".2f"), alt.Tooltip("high:Q", title="Ratio to", format=".2f"),
                  alt.Tooltip("share_pct:Q", title="Share of drivers (%)", format=".2f")],
     ).properties(height=380, title=chart_title(
-        f"For {100 * price['share_differing']:.0f}% of drivers the two prices differ by more than 10%",
-        "Holdout policies, weighted by time insured"))
+        "Share of drivers, by GBM price divided by GLM price", "Holdout policies, weighted by time insured"))
 
 
 def lift_chart(rows):
@@ -245,18 +352,24 @@ def lift_chart(rows):
     glm = base.transform_filter(alt.datum.series == "GLM").mark_line(strokeWidth=7, opacity=0.45)
     gbm = base.transform_filter(alt.datum.series == "GBM").mark_line(strokeWidth=2, point=alt.OverlayMarkDef(size=36))
     actual = base.transform_filter(alt.datum.series == "Actual").mark_line(strokeWidth=2, point=alt.OverlayMarkDef(size=50))
-    spreads = [times(d[c].iloc[-1] / d[c].iloc[0]) for c in ["Actual", "GLM", "GBM"]]
-    title = f"The highest-risk group claims {spreads[0]} as often as the lowest"
-    if len(set(spreads)) == 1:
-        title += ", as both models predict"
     return alt.layer(glm, gbm, actual).properties(height=420, title=chart_title(
-        title, "Holdout, final models, ten groups of equal exposure"))
+        "Claims per driver per year, by predicted risk group", "Holdout, final models, ten groups of equal exposure"))
+
+
+def lift_spreads(rows):
+    """Highest-risk group over lowest-risk group, in words, for the actual rate, the GLM and the GBM."""
+    return [times(rows[-1][c] / rows[0][c]) for c in ("actual_rate", "rate_glm", "rate_gbm")]
+
+
+def shap_ratio(rows):
+    """The largest mean |SHAP| value over the second largest."""
+    values = sorted((r["mean_abs_shap"] for r in rows), reverse=True)
+    return values[0] / values[1]
 
 
 def double_lift_chart(rows):
     d = pd.DataFrame(rows).rename(columns={"actual_rate": "Actual", "rate_glm": "GLM", "rate_gbm": "GBM"})
     long = d.melt(id_vars=["bin"], value_vars=["Actual", "GLM", "GBM"], var_name="series", value_name="rate")
-    n = gbm_closer_groups(rows)
     return alt.Chart(long).mark_line(point=alt.OverlayMarkDef(size=50), strokeWidth=2.5).encode(
         x=alt.X("bin:O", title="Group (GBM against GLM, low to high)", axis=alt.Axis(labelAngle=0)),
         y=alt.Y("rate:Q", title="Claims per driver per year", scale=alt.Scale(zero=False), axis=alt.Axis(format=".3f")),
@@ -264,7 +377,7 @@ def double_lift_chart(rows):
         tooltip=[alt.Tooltip("series:N", title="Series"), alt.Tooltip("bin:O", title="Group"),
                  alt.Tooltip("rate:Q", title="Claims per driver per year", format=".4f")],
     ).properties(height=440, title=chart_title(
-        f"The GBM is closer to the actual rate in {n} groups of 10, the GLM in {len(rows) - n}",
+        "Claims per driver per year, by ratio of GBM to GLM prediction",
         "Final models on the holdout, ten groups of equal exposure"))
 
 
@@ -282,9 +395,8 @@ def lorenz_chart(lorenz):
         color=series_colour(("GLM", "GBM")),
         tooltip=[alt.Tooltip("series:N", title="Model"), alt.Tooltip("x:Q", title="Exposure", format=".0%"),
                  alt.Tooltip("y:Q", title="Claims", format=".1%")])
-    g, b = lorenz["glm_final"]["gini"], lorenz["gbm_final"]["gini"]
     return alt.layer(diagonal, curves).properties(height=440, title=chart_title(
-        f"The two curves almost coincide (Gini {g:.3f} and {b:.3f})", "Holdout, final GLM and GBM"))
+        "Lorenz curves of the final GLM and GBM", "Holdout: share of claims against share of exposure"))
 
 
 def relativity_chart(factor):
@@ -301,7 +413,7 @@ def relativity_chart(factor):
     one = alt.Chart(pd.DataFrame({"relativity": [1.0]})).mark_rule(color="#888888").encode(
         x=alt.X("relativity:Q", title=title, scale=scale))
     return alt.layer(bars, one).properties(height=170 + 26 * len(d), title=chart_title(
-        f"{factor['name']}: relativities of the final GLM", "Each level against the level with the most exposure"))
+        f"Relativities of the final GLM, by {factor['name'].lower()}", "Each level against the level with the most exposure"))
 
 
 def density_chart(density):
@@ -314,7 +426,7 @@ def density_chart(density):
     ref = alt.Chart(pd.DataFrame({"density": [density["reference_density"]], "relativity": [1.0]})).mark_circle(
         size=70, color=GLM_BLUE).encode(x=x, y=y)
     return alt.layer(line, ref).properties(height=400, title=chart_title(
-        f"Each tenfold rise in density multiplies the claim rate by {density['per_tenfold']:.2f}",
+        "Relativity of the final GLM, by population density",
         f"Relative to the median training density, {density['reference_density']:,.0f} per km²"))
 
 
@@ -334,10 +446,95 @@ def record_length_chart(rows):
         tooltip=[alt.Tooltip("series:N", title="Model"), alt.Tooltip("record_length:N", title="Record"),
                  alt.Tooltip("a_over_e:Q", title="Actual / expected", format=".2f")])
     one = alt.Chart(pd.DataFrame({"a_over_e": [1.0]})).mark_rule(color="#888888").encode(y=y)
-    r = {row["record_length"]: row for row in rows}
     return alt.layer(bars, one).properties(height=400, title=chart_title(
-        f"Actual over predicted is {r['under half a year']['a_over_e_glm']:.2f} for short records and "
-        f"{r['full year']['a_over_e_glm']:.2f} for full years", "Holdout, final models (figures for the GLM)"))
+        "Actual over predicted claims, by length of record", "Holdout, final models"))
+
+
+def waterfall_rows(result, names=None):
+    """The waterfall's bars and labels. Euro amounts are whole euros, taken as differences of the rounded
+    running totals, so that the steps always add up exactly to the displayed price. Each step is also
+    labelled with its multiplier. `names` maps a term to {level code: readable name}."""
+    names = names or {}
+    rows = [{"step": "Base|reference driver", "start": 0.0, "end": result["base"], "kind": "Total",
+             "label": f"EUR {round(result['base']):,}", "euros": round(result["base"])}]
+    for s in result["steps"]:
+        level = names.get(s["term"], {}).get(s["level"], s["level"])
+        euros = round(s["end"]) - round(s["start"])
+        rows.append({"step": f"{s['step']}|{level}", "start": s["start"], "end": s["end"],
+                     "kind": "Raises" if s["factor"] >= 1 else "Lowers",
+                     "label": f"×{s['factor']:.2f} ({euros:+,})", "euros": euros})
+    rows.append({"step": "GLM price", "start": 0.0, "end": result["price"], "kind": "Total",
+                 "label": f"EUR {round(result['price']):,}", "euros": round(result["price"])})
+    d = pd.DataFrame(rows)
+    d["right"] = d[["start", "end"]].max(axis=1)
+    return d
+
+
+def round_ticks(top):
+    """At most six round tick values from 0 up to `top` (steps of 1, 2, 2.5 or 5 times a power of ten)."""
+    magnitude = 10 ** np.floor(np.log10(top))
+    step = next(m * magnitude for m in (0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10) if top / (m * magnitude) <= 5)
+    return [float(i * step) for i in range(int(top // step) + 1)]
+
+
+def waterfall_chart(result, names=None):
+    """How each GLM factor moves the price from the base, as horizontal bars from one total to the next."""
+    d = waterfall_rows(result, names)
+    kinds = ["Total", "Raises", "Lowers"]
+    scale = alt.Scale(domain=[0, 1.45 * d["right"].max()], nice=False)  # room for the labels at the right
+    title = "EUR per year"
+    y = alt.Y("step:N", sort=list(d["step"]), title=None,
+              axis=alt.Axis(labelExpr="split(datum.label, '|')", labelLimit=150))
+    x_axis = alt.Axis(values=round_ticks(d["right"].max()))  # ticks stop before the label space at the right
+    bars = alt.Chart(d).mark_bar(height=18, cornerRadius=2).encode(
+        x=alt.X("start:Q", title=title, scale=scale, axis=x_axis), x2="end:Q", y=y,
+        color=alt.Color("kind:N", title=None, scale=alt.Scale(domain=kinds, range=[GLM_BLUE, ACTUAL_GREY, MUTED_GREY]),
+                        legend=alt.Legend(orient="top", symbolOpacity=1)),
+        tooltip=[alt.Tooltip("step:N", title="Step"), alt.Tooltip("start:Q", title="From (EUR)", format=",.2f"),
+                 alt.Tooltip("end:Q", title="To (EUR)", format=",.2f")])
+    labels = alt.Chart(d).mark_text(align="left", dx=4, fontSize=12, color=ACTUAL_GREY).encode(
+        x=alt.X("right:Q", title=title, scale=scale, axis=x_axis), y=y, text="label:N")
+    return alt.layer(bars, labels).properties(height=190 + 36 * len(d), title=chart_title(
+        "GLM price, built up factor by factor", "EUR per year, from the reference driver to this driver"))
+
+
+def is_reference_driver(result):
+    """True when no factor moves the GLM's price, that is, every input is at its reference level."""
+    return all(abs(s["end"] - s["start"]) < 0.005 for s in result["steps"])
+
+
+def explore_rates_chart(factor):
+    rows, ordered = factor["rows"], factor["factor"] in ORDERED_FACTORS
+    d = pd.DataFrame(rows).rename(columns={"actual": "Actual", "glm": "GLM", "gbm": "GBM"})
+    long = d.melt(id_vars=["level"], value_vars=["Actual", "GLM", "GBM"], var_name="series", value_name="rate")
+    levels = [r["level"] for r in rows]
+    x = alt.X("level:N", sort=levels, title=None, axis=alt.Axis(labels=False, ticks=False))
+    y = alt.Y("rate:Q", title="Claims per driver per year", axis=alt.Axis(format=".2f", minExtent=56))
+    base = alt.Chart(long).encode(
+        x=x, y=y, color=series_colour(),
+        tooltip=[alt.Tooltip("series:N", title="Series"), alt.Tooltip("level:N", title="Group"),
+                 alt.Tooltip("rate:Q", title="Claims per driver per year", format=".4f")])
+    models = base.transform_filter(alt.datum.series != "Actual")
+    models = models.mark_line(strokeWidth=2.5, point=alt.OverlayMarkDef(size=40)) if ordered else models.mark_point(
+        size=110, filled=True, shape="diamond")
+    actual = base.transform_filter(alt.datum.series == "Actual").mark_circle(size=70, opacity=1)
+    return alt.layer(models, actual).properties(height=360, title=chart_title(
+        f"Claims per driver per year, by {factor['name'].lower()}", "Holdout policies, final models"))
+
+
+def explore_exposure_chart(factor):
+    rows = factor["rows"]
+    levels = [r["level"] for r in rows]
+    # Vertical labels when there are many groups or long names, so that every group is labelled on a phone.
+    angle = -90 if len(levels) > 6 or max(len(str(level)) for level in levels) > 8 else 0
+    return alt.Chart(pd.DataFrame(rows)).mark_bar(color=MUTED_GREY).encode(
+        x=alt.X("level:N", sort=levels, title=None,
+                axis=alt.Axis(labelAngle=angle, labelLimit=150, labelOverlap=False)),
+        y=alt.Y("exposure:Q", title="Policy-years", axis=alt.Axis(format="~s", minExtent=56, tickCount=3)),
+        tooltip=[alt.Tooltip("level:N", title="Group"), alt.Tooltip("exposure:Q", title="Policy-years", format=",.0f"),
+                 alt.Tooltip("claims:Q", title="Claims", format=",.0f")],
+    ).properties(height=150 + (110 if angle else 0), title=alt.TitleParams(
+        "Holdout policy-years, by group", anchor="start", fontSize=12, color="#555555"))
 
 
 # ---------------------------------------------------------------------------------------------
@@ -374,9 +571,8 @@ def header(data):
 def data_and_cleaning(data):
     n = data["models"]["train"]["policies"] + data["models"]["holdout"]["policies"]
     st.markdown(
-        f"We use freMTPL2, a public dataset of French motor third-party liability policies from the CASdatasets "
-        f"collection, downloaded from OpenML. After cleaning it holds {n:,} policies with their claim counts and claim "
-        f"amounts.")
+        f"After cleaning, the data hold {n:,} French motor third-party liability policies with their claim counts and "
+        f"claim amounts. They come from freMTPL2, a public dataset in the CASdatasets collection, downloaded from OpenML.")
     st.markdown(
         "We exclude the policies with the lowest policy numbers (up to 24,951), since every one of them has a claim "
         "count but almost none has a claim amount, and so they are not a random sample of the book. Claim counts are "
@@ -389,10 +585,11 @@ def data_and_cleaning(data):
 def split_and_validation(data):
     n_train, n_holdout = data["models"]["train"]["policies"], data["models"]["holdout"]["policies"]
     st.markdown(
-        f"We split the policies once into {n_train:,} for fitting and {n_holdout:,} for testing (the holdout). We cut "
-        f"the policies into five folds, stratified on whether a policy has a claim and grouped so that policies with "
-        f"identical rating factors stay together, and one fold is the holdout. Banding, tuning and the choice of model "
-        f"terms use 4-fold cross-validation on the other four folds.")
+        f"Every model is fitted on the same {n_train:,} training policies and scored on the same {n_holdout:,} holdout "
+        f"policies, and so the comparison isolates the models themselves. We cut the policies into five folds, "
+        f"stratified on whether a policy has a claim and grouped so that policies with identical rating factors stay "
+        f"together, and one fold is the holdout. Banding, tuning and the choice of model terms use 4-fold "
+        f"cross-validation on the other four folds.")
     st.markdown(
         "The GBM was tuned by a 30-trial random search with early stopping. The intervals are paired bootstrap "
         "intervals from 1,000 resamples of holdout policies, in which both models are scored on the same resample.")
@@ -405,16 +602,18 @@ def article(data):
     section_label("Introduction")
     st.subheader("The two ways to predict car insurance claims")
     st.markdown(
-        "Both models predict how often a driver will claim, in claims per driver per year, from the same rating factors "
-        "such as driver age, vehicle power and region. The GLM (generalised linear model) is the industry standard. It "
-        "multiplies together one factor per characteristic, each read from a table, and so a characteristic such as age "
-        "is split into bands with one value per band.")
+        "The two models give similar predictions but reach them differently, since the GLM's prediction moves in steps "
+        "between bands whereas the GBM's changes gradually. Both predict how often a driver will claim, in claims per "
+        "driver per year, from the same rating factors such as driver age, vehicle power and region.")
     st.markdown(
-        "The GBM (gradient-boosted model) is a machine-learning method, and it learns the shape of each relationship "
-        "from the data instead.")
+        "The GLM (generalised linear model) is the industry standard. It multiplies together one factor per "
+        "characteristic, each read from a table, and so a characteristic such as age is split into bands with one value "
+        "per band. The GBM (gradient-boosted model) is a machine-learning method, and it learns the shape of each "
+        "relationship from the data instead.")
     show(driver_age_chart(data["driver_age"]["rows"]))
     st.caption("Each dot is the actual claim rate of holdout drivers of that age, and each line is a model's average "
-               "prediction for the same drivers.")
+               "prediction for the same drivers. The GLM's line moves in steps at its band edges, whereas the GBM's "
+               "changes gradually.")
     with st.expander("How the two models work"):
         st.markdown(
             "The GLM assumes that the logarithm of a driver's expected claim rate is a sum of one term per rating factor. "
@@ -432,22 +631,22 @@ def article(data):
 
     st.divider()
     section_label("Analysis")
-    st.subheader("At first, the GBM was clearly better, and it relied most on the no-claims score")
+    st.subheader("The first comparison")
     st.markdown(
-        "In our first comparison both models used all nine rating factors in the data, including the no-claims score. "
-        "This is France's bonus-malus coefficient: 50 is the maximum discount, 100 is the starting level, and a score "
-        "above 100 is a surcharge after claims.")
+        f"With all nine rating factors, the GBM was {verdict(gbm9['low_pct'], gbm9['high_pct'])}, with a prediction "
+        f"error {gbm9['pct']:.2f}% lower than the GLM's, and it relied most on the no-claims score. Prediction error "
+        f"(lower is better) measures how far the predicted numbers of claims are from the actual ones.")
     st.markdown(
-        f"The GBM was {verdict(gbm9['low_pct'], gbm9['high_pct'])}, with a prediction error {gbm9['pct']:.2f}% lower "
-        f"than the GLM's. Prediction error (lower is better) measures how far the predicted numbers of claims are from "
-        f"the actual ones.")
+        "The nine factors include the no-claims score, which is France's bonus-malus coefficient: 50 is the maximum "
+        "discount, 100 is the starting level, and a score above 100 is a surcharge after claims.")
     st.caption(
         f"Prediction error is the Poisson deviance per policy-year on the holdout: {glm9['poisson_deviance']:.5f} for the "
         f"GLM and {gbm9['poisson_deviance']:.5f} for the GBM. The 95% paired bootstrap interval for the reduction is "
         f"{gbm9['low_pct']:.2f}% to {gbm9['high_pct']:.2f}% of the GLM's error, and so it excludes zero.")
     show(shap_chart(data["shap"]["rows"]))
-    st.caption("Each bar is the average size of one factor's effect on the GBM's prediction, and so a longer bar means "
-               "the GBM relied on that factor more.")
+    st.caption(f"Each bar is the average size of one factor's effect on the GBM's prediction, and so a longer bar means "
+               f"the GBM relied on that factor more. The no-claims score's bar is {times(shap_ratio(data['shap']['rows']))} "
+               f"as long as the next longest.")
     with st.expander("What a SHAP value is, and what it showed"):
         st.markdown(
             f"A SHAP value splits one driver's prediction into a contribution from each rating factor, and the "
@@ -461,20 +660,23 @@ def article(data):
             "investigate the score itself.")
 
     st.divider()
-    st.subheader("The no-claims score appears to contain information from after the claims")
+    st.subheader("A closer look at the no-claims score")
     st.markdown(
-        "The dataset does not say when the no-claims score was recorded. If it was recorded at the start of each policy, "
-        "it describes the driver's past and is a fair rating factor. If it was recorded later, a claim in the data may "
-        "already have raised it, which is like checking a driver's no-claims score after their accident and using it to "
-        "predict that accident.")
+        "The no-claims score appears to have been recorded after some of the claims it is used to predict, and so part "
+        "of its predictive power is probably leakage. The dataset does not say when the score was recorded.")
     st.markdown(
-        "This is called leakage, since information from after the event leaks into the prediction. We find that the "
-        "evidence for it here is strong but unproven, and so we describe the leakage as probable.")
+        "If it was recorded at the start of each policy, it describes the driver's past and is a fair rating factor. If "
+        "it was recorded later, a claim in the data may already have raised it, which is like checking a driver's "
+        "no-claims score after their accident and using it to predict that accident.")
+    st.markdown(
+        "Leakage means that information from after the event leaks into the prediction. The evidence for it here is "
+        "strong but unproven, and so we describe the leakage as probable.")
     scores = {r["score"]: r for r in data["score_rates"]["rows"]}
     ratio = scores[62]["rate"] / scores[50]["rate"]
     show(score_chart(data["score_rates"]["rows"]))
-    st.caption("Each bar is the claim rate of drivers with that score, among full-year policy records in the training "
-               "data. A driver at 50 who makes a claim moves to 62 at the next renewal.")
+    st.caption(f"Each bar is the claim rate of drivers with that score, among full-year policy records in the training "
+               f"data. A driver at 50 who makes a claim moves to 62 at the next renewal, and drivers at 62 claim "
+               f"{times(ratio)} as often as drivers at 50.")
     st.markdown(
         f"A single past claim would not be expected to make a driver {times(ratio)} as likely to claim again, and so "
         f"the high rate at 62 suggests that many of these claims are the very claims that moved the score.")
@@ -505,18 +707,20 @@ def article(data):
             "with this dataset, not with bonus-malus as a rating factor.")
 
     st.divider()
-    st.subheader("Without it, the GBM's advantage all but disappears")
+    st.subheader("The final comparison")
     st.markdown(
-        f"We then removed the no-claims score from both models, retuned the GBM on the training data and scored each "
-        f"model once on the holdout. We committed the specification of both models before scoring them "
-        f"([commit f954934]({SPEC_COMMIT_URL})).")
-    st.markdown(
-        f"The GBM's prediction error is now only {gbm8['pct']:.2f}% lower than the GLM's, which is "
-        f"{verdict(gbm8['low_pct'], gbm8['high_pct'])}. On the remaining eight factors the difference is therefore small "
+        f"Without the no-claims score, the GBM's prediction error is only {gbm8['pct']:.2f}% lower than the GLM's, which "
+        f"is {verdict(gbm8['low_pct'], gbm8['high_pct'])}, and so on the remaining eight factors the difference is small "
         f"and not distinguishable from zero.")
+    st.markdown(
+        f"To reach this comparison we removed the score from both models, retuned the GBM on the training data and "
+        f"scored each model once on the holdout. We committed the specification of both models before scoring them "
+        f"([commit f954934]({SPEC_COMMIT_URL})).")
     show(with_without_chart(data))
-    st.caption("Each dot is how much lower the GBM's prediction error is than the GLM's, and the line through it is the "
-               "95% interval. An interval that crosses zero means the difference is within the margin of error.")
+    crosses = "crosses zero" if gbm8["low_pct"] < 0 < gbm8["high_pct"] else "does not cross zero"
+    st.caption(f"Each dot is how much lower the GBM's prediction error is than the GLM's, and the line through it is the "
+               f"95% interval. The advantage falls from {gbm9['pct']:.2f}% to {gbm8['pct']:.2f}%, and the second interval "
+               f"{crosses}. An interval that crosses zero means the difference is within the margin of error.")
     st.caption(
         f"Without the score, prediction error (Poisson deviance per policy-year) is {glm8['poisson_deviance']:.5f} for the "
         f"GLM and {gbm8['poisson_deviance']:.5f} for the GBM. The reduction is {gbm8['reduction']:.5f}, with a 95% "
@@ -536,16 +740,19 @@ def article(data):
             f"{100 * calibration:.1f}%.")
 
     st.divider()
-    section_label("Conclusion")
-    st.subheader("Without the no-claims score, both models agree on who is high risk")
+    st.subheader("How the models rank drivers")
     price = data["price_ratio"]
+    lift = data["lift"]["rows"]
     st.markdown(
-        "We sort the holdout policies by the average of the two models' predictions and cut them into ten groups of "
-        "equal exposure, from the lowest predicted risk to the highest. For each group we plot the actual claim rate and "
+        "Without the no-claims score, both models agree on who is high risk, and both match what actually happened. We "
+        "sort the holdout policies by the average of the two models' predictions and cut them into ten groups of equal "
+        "exposure, from the lowest predicted risk to the highest, and for each group we plot the actual claim rate and "
         "each model's average prediction.")
-    show(lift_chart(data["lift"]["rows"]))
-    st.caption("If the three lines move together, the two models sort drivers the same way and both match what actually "
-               "happened.")
+    show(lift_chart(lift))
+    spreads = lift_spreads(lift)
+    agree = ", as both models predict" if len(set(spreads)) == 1 else ""
+    st.caption(f"If the three lines move together, the two models sort drivers the same way and both match what actually "
+               f"happened. Here they do, and the highest-risk group claims {spreads[0]} as often as the lowest{agree}.")
     st.markdown(
         f"However, individual prices still differ, and for {100 * price['share_differing']:.0f}% of drivers the two "
         f"models' prices are more than 10% apart.")
@@ -554,8 +761,8 @@ def article(data):
             "For each holdout policy we divide the GBM's price by the GLM's, where the price is the expected cost of "
             "claims per year.")
         show(price_ratio_chart(price))
-        st.caption("Each bar is the share of drivers, weighted by time insured, with that ratio of GBM price to GLM "
-                   "price. The darker bars are more than 10% apart.")
+        st.caption(f"Each bar is the share of drivers, weighted by time insured, with that ratio of GBM price to GLM "
+                   f"price. The darker bars, more than 10% apart, hold {100 * price['share_differing']:.0f}% of drivers.")
         st.markdown(
             f"Of the holdout exposure, {price['share_higher']:.1%} would pay more than 10% more under the GBM and "
             f"{price['share_lower']:.1%} more than 10% less. The two models agree on average and rank drivers about "
@@ -566,22 +773,25 @@ def article(data):
             f"include the {price['share_beyond_axis']:.1%} of exposure beyond the axis.")
 
     st.divider()
-    st.subheader("Method and limitations")
+    st.subheader("Limitations")
     record = {r["record_length"]: r for r in data["record_length"]["rows"]}
     st.markdown(
-        f"We note three limitations. First, the evidence on the no-claims score is strong but unproven, since the "
-        f"dataset does not say when the score was recorded. Second, both models assume that claims grow in proportion "
-        f"to the length of the record, which does not hold in this data, and so they over-predict full-year records "
-        f"(actual over expected {record['full year']['a_over_e_glm']:.2f} for the GLM) and under-predict records under "
-        f"half a year ({record['under half a year']['a_over_e_glm']:.2f}). Third, the holdout was used to compare several "
-        f"earlier models, and one choice (dropping an interaction term) was made with those results in view, and so the "
-        f"final figures may be mildly optimistic, although the final models were committed before they were scored.")
+        f"The main limitations are that the evidence on the no-claims score is unproven, that both models misprice "
+        f"records by their length, and that the holdout was used more than once. First, the dataset does not say when "
+        f"the score was recorded. Second, both models assume that claims grow in proportion to the length of the record, "
+        f"which does not hold in this data, and so they over-predict full-year records (actual over expected "
+        f"{record['full year']['a_over_e_glm']:.2f} for the GLM) and under-predict records under half a year "
+        f"({record['under half a year']['a_over_e_glm']:.2f}). Third, one choice (dropping an interaction term) was made "
+        f"with earlier holdout results in view, and so the final figures may be mildly optimistic, although the final "
+        f"models were committed before they were scored.")
     with st.expander("Method in detail"):
         data_and_cleaning(data)
         split_and_validation(data)
         st.markdown(f"{DISCLOSURE} The code and the full method are on [GitHub]({REPO_URL}).")
 
     st.divider()
+    section_label("Conclusion")
+    st.subheader("What this means")
     st.markdown(
         f"On this data, and without the no-claims score, the GBM's advantage over the GLM is "
         f"{verdict(gbm8['low_pct'], gbm8['high_pct'])}. The GLM therefore matches the GBM's accuracy while staying fully "
@@ -589,21 +799,103 @@ def article(data):
     st.caption(f"[GitHub repository]({REPO_URL}) · [LinkedIn]({LINKEDIN_URL})")
 
 
+def try_it_yourself(data):
+    table = data["rating_table"]
+    inputs = table["inputs"]
+    booster, info = load_gbm()
+
+    section_label("Price a driver")
+    st.subheader("Where the price comes from")
+    st.markdown(
+        "The GLM's price can be traced factor by factor, whereas the GBM's cannot. Describe a driver and their car, and "
+        "both final models give the expected cost of their claims for one year, starting from a typical driver in the data.")
+    brands = {b["code"]: b["label"] for b in inputs["brands"]}
+    fuels = {f["code"]: f["label"] for f in inputs["fuels"]}
+    regions = {r["code"]: r["label"] for r in inputs["regions"]}
+    left, right = st.columns(2)
+    with left:
+        a, v, p, dens = inputs["driver_age"], inputs["vehicle_age"], inputs["vehicle_power"], inputs["density"]
+        age = st.slider("Driver age", a["min"], a["max"], a["default"], key="driver_age")
+        vehicle_age = st.slider("Vehicle age (years)", v["min"], v["max"], v["default"], key="vehicle_age")
+        power = st.slider("Vehicle power (the dataset's scale, 4 to 15)", p["min"], p["max"], p["default"], key="power")
+        density = st.select_slider("Population density, from rural to city (people per km², log scale)",
+                                   options=dens["options"], value=dens["default"], format_func=lambda x: f"{x:,}",
+                                   key="density")
+    with right:
+        brand = st.selectbox("Vehicle brand (anonymised in the data as brand groups 1 to 14)", list(brands),
+                             index=list(brands).index(inputs["brand_default"]), format_func=brands.get, key="brand")
+        fuel = st.radio("Fuel", list(fuels), index=list(fuels).index(inputs["fuel_default"]), format_func=fuels.get,
+                        horizontal=True, key="fuel")
+        region = st.selectbox("Region", list(regions), index=list(regions).index(inputs["region_default"]),
+                              format_func=regions.get, key="region")
+    st.caption("The no-claims score is not an input, since the final models leave it out because of the probable "
+               "leakage described in the Article.")
+
+    driver = {"DrivAge": age, "VehAge": vehicle_age, "VehPower": power, "Density": density, "VehBrand": brand,
+              "VehGas": fuel, "Region": region, "Area": area_from_density(density, inputs["area_bounds"])}
+    glm, gbm = glm_price(table, driver), gbm_price(booster, info, table, driver)
+    st.markdown("**Expected claims cost per year, before expenses and profit**")
+    col_glm, col_gbm = st.columns(2)
+    col_glm.metric("GLM", f"EUR {glm['price']:,.0f}")
+    col_gbm.metric("GBM", f"EUR {gbm['price']:,.0f}")
+    st.caption(
+        f"Expected claims per year: {glm['frequency']:.3f} from the GLM and {gbm['frequency']:.3f} from the GBM. Both "
+        f"multiply by the same expected cost per claim, EUR {glm['severity']:,.0f} at this driver's age, and by the flat "
+        f"load (1.192) for the part of claims above EUR 181,271.")
+    short_regions = {code: label.split(" (")[0] for code, label in regions.items()}
+    show(waterfall_chart(glm, {"VehBrand": brands, "VehGas": fuels, "Region": short_regions}))
+    if is_reference_driver(glm):
+        reading = ("This is the GLM's reference driver, and so no factor moves the price. Change an input to see the "
+                   "steps.")
+    else:
+        direction = "rises" if glm["price"] >= glm["base"] else "falls"
+        reading = (f"For this driver the GLM's price {direction} from EUR {round(glm['base']):,} for the reference "
+                   f"driver to EUR {round(glm['price']):,}.")
+    st.caption(
+        f"{reading} Each bar multiplies the price by one factor's relativity from the GLM's rating table, starting from a driver "
+        "at every reference level (the level with the most exposure) and the median density. Driver age appears twice, "
+        "since the shared severity model also uses it. The GBM has no such table, since its price comes from 92 trees, "
+        "each of which can use several factors at once.")
+    st.caption(
+        "Note that the GLM multiplies its factors, and so the euro amount of each step depends on the order shown, "
+        "whereas the multipliers do not.")
+
+    st.divider()
+    section_label("Explore the data")
+    st.subheader("Predictions by rating factor")
+    st.markdown(
+        "Within every rating factor, the two models' average predictions stay close together. Choose a rating factor to "
+        "compare the actual claim rate in the holdout with each model's average prediction, group by group.")
+    factors = data["explore"]["factors"]
+    name = st.selectbox("Rating factor", [f["name"] for f in factors], key="explore_factor")
+    factor = next(f for f in factors if f["name"] == name)
+    show(explore_rates_chart(factor))
+    show(explore_exposure_chart(factor))
+    gap = largest_model_gap(factor["rows"])
+    closeness = (f"In every group with at least 2,000 policy-years, the two models' average predictions are within "
+                 f"{gap[0]:.1%} of each other (the widest gap is in {gap[1]}). " if gap else "")
+    st.caption(
+        f"Holdout policies only, shown for display: nothing on this chart was used to fit or choose a model. "
+        f"{closeness}Groups with little exposure have noisy actual rates.")
+
+
 def quantitative_analysis(data):
     holdout = data["models"]["holdout"]
 
     section_label("Data and validation")
-    st.subheader("Every model uses the same data, the same split and the same metrics")
-    st.markdown(
-        f"In this tab we give the full results for readers who work in pricing. Every figure is on the holdout of "
-        f"{holdout['policies']:,} policies ({holdout['claims']:,} claims) unless it says otherwise, and each model is "
-        f"rebalanced by one scalar factor fitted on the training data, all within 0.3% of 1.")
+    st.subheader("The data")
     data_and_cleaning(data)
-    split_and_validation(data)
 
-    st.subheader("The holdout was used to score models, and once to choose between them")
+    st.subheader("The train and holdout split")
+    split_and_validation(data)
     st.markdown(
-        "We used the holdout in three stages. First, we scored seven models with all nine rating factors: the GLM, the "
+        f"In this tab every figure is on the holdout of {holdout['policies']:,} policies ({holdout['claims']:,} claims) "
+        f"unless it says otherwise, and each model is rebalanced by one scalar factor fitted on the training data, all "
+        f"within 0.3% of 1.")
+
+    st.subheader("How the holdout was used")
+    st.markdown(
+        "The holdout was used to score models, and once to choose between them. We used the holdout in three stages. First, we scored seven models with all nine rating factors: the GLM, the "
         "GLM with an interaction between the no-claims score and region, the GLM with the ladder indicator, the GLM with "
         "both, the GBM, the additive GBM and the GBM with an increasing constraint on the score.")
     st.markdown(
@@ -617,9 +909,9 @@ def quantitative_analysis(data):
 
     st.divider()
     section_label("Model performance")
-    st.subheader("The final GLM and GBM are level on every holdout metric")
+    st.subheader("Prediction error")
     st.markdown(
-        "The table gives every model we scored on the holdout. The reduction in prediction error is against the GLM with "
+        "The final GLM and GBM are level on every holdout metric. The table gives every model we scored on the holdout. The reduction in prediction error is against the GLM with "
         "the same rating factors, as a percentage of that GLM's error, and its interval is a paired bootstrap interval "
         "from 1,000 resamples of holdout policies.")
     rows = data["models"]["rows"]
@@ -636,61 +928,77 @@ def quantitative_analysis(data):
         "higher no-claims score. The nine-factor models are the comparison that exposed the timing problem, not pricing "
         "models.")
 
-    st.subheader("The two final models rank drivers almost equally well")
+    st.subheader("Lorenz curves and Gini")
+    gini_glm, gini_gbm = data["lorenz"]["glm_final"]["gini"], data["lorenz"]["gbm_final"]["gini"]
     st.markdown(
-        "We order the holdout policies from the lowest predicted claim rate to the highest and plot the cumulative share "
-        "of exposure against the cumulative share of claims. A model with no ability to rank drivers follows the "
-        "diagonal, and the Gini coefficient is twice the area between the curve and the diagonal.")
+        f"The two final models rank drivers almost equally well, with Gini coefficients of {gini_glm:.3f} for the GLM "
+        f"and {gini_gbm:.3f} for the GBM. We order the holdout policies from the lowest predicted claim rate to the "
+        f"highest and plot the cumulative share of exposure against the cumulative share of claims. A model with no "
+        f"ability to rank drivers follows the diagonal, and the Gini coefficient is twice the area between the curve and "
+        f"the diagonal.")
     show(lorenz_chart(data["lorenz"]))
-    st.caption("Note that Gini measures ranking only. A model can rank well and still be mis-calibrated, which is why we "
-               "report actual over expected alongside it.")
+    st.caption("The two curves almost coincide. Note that Gini measures ranking only, and a model can rank well and still "
+               "be mis-calibrated, which is why we report actual over expected alongside it.")
 
     st.divider()
     section_label("Diagnostics")
-    st.subheader("Where the final models disagree, neither is consistently closer to the actual rate")
+    st.subheader("Double-lift chart")
+    lift2 = data["double_lift"]["rows"]
+    closer = gbm_closer_groups(lift2)
     st.markdown(
-        "We sort the holdout policies by the ratio of the GBM's prediction to the GLM's and cut them into ten groups of "
-        "equal exposure. Group 1 holds the policies where the GBM is furthest below the GLM, and group 10 those where it "
-        "is furthest above.")
-    show(double_lift_chart(data["double_lift"]["rows"]))
+        "Where the final models disagree, neither is consistently closer to the actual claim rate. We sort the holdout "
+        "policies by the ratio of the GBM's prediction to the GLM's and cut them into ten groups of equal exposure. Group "
+        "1 holds the policies where the GBM is furthest below the GLM, and group 10 those where it is furthest above.")
+    show(double_lift_chart(lift2))
     st.caption(
-        "For each group we plot the actual claim rate and each model's average prediction. Where the models disagree, "
-        "the better model is the one whose line stays closer to the actual line. In both end groups, where they disagree "
-        "most, the actual rate lies between the two models.")
+        f"For each group we plot the actual claim rate and each model's average prediction. Where the models disagree, "
+        f"the better model is the one whose line stays closer to the actual line. The GBM is closer in {closer} groups of "
+        f"{len(lift2)} and the GLM in {len(lift2) - closer}, and in both end groups, where they disagree most, the actual "
+        f"rate lies between the two models.")
 
-    st.subheader("Both models over-predict full-year records and under-predict short ones")
+    st.subheader("Actual vs expected by record length")
     record = {r["record_length"]: r for r in data["record_length"]["rows"]}
     st.markdown(
-        "Claim frequency is not proportional to the length of the record in this data, whereas both models assume that "
+        "Both models over-predict full-year records and under-predict short ones. Claim frequency is not proportional to "
+        "the length of the record in this data, whereas both models assume that "
         "it is, since they take exposure as an offset with its coefficient fixed at 1. The standard remedy is to fit log "
         "exposure as a covariate, which we did not apply, since the final models had already been scored and the change "
         "would be one more choice made with the holdout in view.")
     show(record_length_chart(data["record_length"]["rows"]))
     st.caption(
-        f"Holdout exposure: {record['under half a year']['exposure_share']:.0%} in records under half a year, "
+        f"For the GLM, actual over predicted is {record['under half a year']['a_over_e_glm']:.2f} for records under half "
+        f"a year and {record['full year']['a_over_e_glm']:.2f} for full-year records. Holdout exposure: "
+        f"{record['under half a year']['exposure_share']:.0%} in records under half a year, "
         f"{record['half to one year']['exposure_share']:.0%} in records of half a year to a year and "
         f"{record['full year']['exposure_share']:.0%} in full-year records.")
 
-    st.subheader("The final GLM can be read directly as a rating table")
+    st.subheader("GLM relativities")
+    st.markdown(
+        "The final GLM can be read directly as a rating table, with one relativity for each level of each factor. Choose "
+        "a factor to see its relativities.")
     rel = data["relativities"]
     names = [f["name"] for f in rel["factors"]] + [rel["density"]["name"]]
-    choice = st.selectbox("Rating factor", names, index=0)
+    choice = st.selectbox("Rating factor", names, index=0, key="relativity_factor")
+    density_note = ""
     if choice == rel["density"]["name"]:
         show(density_chart(rel["density"]))
+        density_note = (f" Each tenfold rise in density multiplies the predicted claim rate by "
+                        f"{rel['density']['per_tenfold']:.2f}.")
     else:
         show(relativity_chart(next(f for f in rel["factors"] if f["name"] == choice)))
     st.caption(
-        "Each relativity multiplies the predicted claim rate against the reference level, which is the level with the "
-        "most exposure. Population density enters on the log scale, and so its relativity is a smooth curve. Severity "
-        "uses a separate Gamma GLM, shared by both models, with driver age as its only factor.")
+        f"Each relativity multiplies the predicted claim rate against the reference level, which is the level with the "
+        f"most exposure. Population density enters on the log scale, and so its relativity is a smooth curve."
+        f"{density_note} Severity uses a separate Gamma GLM, shared by both models, with driver age as its only factor.")
 
     st.divider()
     section_label("The no-claims score")
-    st.subheader("Three training-data checks point to probable leakage in the no-claims score")
+    st.subheader("Three timing checks")
     checks = data["timing_checks"]
     st.markdown(
-        "The first check compares claim rates for no-claims scores below 100 on the claim-free path (the values a driver "
-        "with no claims can hold) and off it (values that can only be reached through a claim), by length of record.")
+        "Three checks on the training data point to probable leakage in the no-claims score. The first compares claim "
+        "rates for no-claims scores below 100 on the claim-free path (the values a driver with no claims can hold) and "
+        "off it (values that can only be reached through a claim), by length of record.")
     lengths = {"under half a year": "Under half a year", "half to one year": "Half a year to a year", "full year": "Full year"}
     check1 = {r["record_length"]: r for r in checks["check1_record_length"]}
     st.table(pd.DataFrame([{
@@ -729,9 +1037,9 @@ def quantitative_analysis(data):
 
     st.divider()
     section_label("In practice")
-    st.subheader("Insurers still price with GLMs because a GLM is a set of rating tables")
+    st.subheader("Why insurers still use GLMs")
     st.markdown(
-        "A GLM can be read factor by factor, and so an underwriter or a regulator can see why a price is what it is. In "
+        "Insurers still price with GLMs because a GLM is a set of rating tables. A GLM can be read factor by factor, and so an underwriter or a regulator can see why a price is what it is. In "
         "many markets regulators expect pricing factors to be explained and checked for unfair discrimination, which is "
         "far easier with a table than with many trees.")
     st.markdown(
@@ -750,10 +1058,11 @@ def main():
                  f"Run `python src\\build_dashboard_data.py` from the repository root, then refresh the page.")
         st.stop()
     header(data)
-    # Stage 2 adds a "Try it yourself" tab between these two.
-    tab_article, tab_analysis = st.tabs(["Article", "Quantitative analysis"])
+    tab_article, tab_try, tab_analysis = st.tabs(["Article", "Try it yourself", "Quantitative analysis"])
     with tab_article:
         article(data)
+    with tab_try:
+        try_it_yourself(data)
     with tab_analysis:
         quantitative_analysis(data)
 

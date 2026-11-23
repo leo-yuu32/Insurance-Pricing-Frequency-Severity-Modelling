@@ -9,6 +9,7 @@ import pytest
 
 import dashboard
 import metrics
+from run_glm import PREDICTIONS_PATH
 from summarise_models import build_summary
 
 DASHBOARD = Path(dashboard.__file__)
@@ -112,20 +113,109 @@ def test_every_chart_builds_on_the_saved_files():
               dashboard.lorenz_chart(data["lorenz"]), dashboard.density_chart(data["relativities"]["density"]),
               dashboard.record_length_chart(data["record_length"]["rows"])]
     charts += [dashboard.relativity_chart(f) for f in data["relativities"]["factors"]]
+    assert dashboard.lift_spreads(data["lift"]["rows"])[0] == "three times"
+    assert dashboard.times(dashboard.shap_ratio(data["shap"]["rows"])) == "three times"
     for chart in charts:
         spec = chart.to_dict()
         assert spec["title"]["text"]
 
 
-def test_dashboard_imports_no_modelling_library():
-    tree = ast.parse(DASHBOARD.read_text(encoding="utf-8"))
+def test_dashboard_trains_nothing():
+    # lightgbm is imported only to load the saved final GBM for prediction; nothing is fitted in the app.
+    source = DASHBOARD.read_text(encoding="utf-8")
+    tree = ast.parse(source)
     imported = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             imported |= {a.name.split(".")[0] for a in node.names}
         elif isinstance(node, ast.ImportFrom):
             imported.add(node.module.split(".")[0])
-    assert imported <= {"json", "pathlib", "textwrap", "altair", "pandas", "streamlit"}, imported
+    assert imported <= {"json", "pathlib", "textwrap", "altair", "lightgbm", "numpy", "pandas", "streamlit"}, imported
+    assert ".train(" not in source and ".fit(" not in source and "Dataset(" not in source
+
+
+def test_bands_and_area():
+    band = {"edges": [17, 19, 21, 200], "labels": ["18-19", "20-21", "22+"]}
+    assert [dashboard.band_of(v, band) for v in (18, 19, 20, 21, 22, 90)] == ["18-19", "18-19", "20-21", "20-21", "22+", "22+"]
+    bounds = [{"area": "A", "min": 1, "max": 50}, {"area": "B", "min": 50, "max": 100}, {"area": "D", "min": 500, "max": 1993},
+              {"area": "E", "min": 2001, "max": 9850}]
+    assert [dashboard.area_from_density(d, bounds) for d in (8, 60, 1600, 1997, 3200)] == ["A", "B", "D", "D", "E"]
+
+
+def test_largest_model_gap():
+    rows = [{"level": "a", "exposure": 5000, "glm": 0.10, "gbm": 0.104}, {"level": "b", "exposure": 3000, "glm": 0.10, "gbm": 0.095},
+            {"level": "c", "exposure": 100, "glm": 0.10, "gbm": 0.2}]
+    gap, level = dashboard.largest_model_gap(rows)
+    assert gap == pytest.approx(0.05) and level == "b"
+    assert dashboard.largest_model_gap(rows[2:]) is None
+
+
+def _pricing():
+    data = _dashboard_data()
+    if not dashboard.GBM_MODEL_PATH.exists():
+        pytest.skip("artifacts/gbm_final.txt not present")
+    booster, info = dashboard.load_gbm()
+    return data["rating_table"], booster, info
+
+
+def test_waterfall_adds_up_to_the_glm_price():
+    table, _, _ = _pricing()
+    inputs = table["inputs"]
+    driver = {"DrivAge": 19, "VehAge": 2, "VehPower": 11, "Density": 6400, "VehBrand": "B12", "VehGas": "Diesel",
+              "Region": "R11", "Area": "E"}
+    r = dashboard.glm_price(table, driver)
+    assert r["steps"][0]["start"] == r["base"] and r["steps"][-1]["end"] == pytest.approx(r["price"])
+    assert all(a["end"] == b["start"] for a, b in zip(r["steps"], r["steps"][1:]))
+    scale = table["glm_pure_premium_rebalance_factor"] * table["large_loss_load"]
+    assert r["price"] == pytest.approx(r["frequency"] * r["severity"] * scale)
+    typical = {"DrivAge": inputs["driver_age"]["default"], "VehAge": inputs["vehicle_age"]["default"],
+               "VehPower": inputs["vehicle_power"]["default"], "Density": inputs["density"]["default"],
+               "VehBrand": inputs["brand_default"], "VehGas": inputs["fuel_default"], "Region": inputs["region_default"]}
+    assert len(dashboard.waterfall_chart(dashboard.glm_price(table, typical)).to_dict()["layer"]) == 2
+    # Driver age is split into the claim-rate step and the cost-per-claim step.
+    assert [s["step"] for s in r["steps"][:2]] == ["Driver age: claim rate", "Driver age: cost per claim"]
+    assert r["steps"][0]["factor"] * r["steps"][1]["factor"] == pytest.approx(
+        table["frequency"]["relativities"]["DrivAgeBand"]["18-19"] * table["severity"]["relativities"]["DrivAgeBand"]["18-19"])
+
+
+def test_waterfall_euros_add_up_to_the_displayed_price():
+    table, _, _ = _pricing()
+    inputs = table["inputs"]
+    rng = np.random.default_rng(0)
+    for _ in range(200):
+        driver = {"DrivAge": int(rng.integers(18, 91)), "VehAge": int(rng.integers(0, 26)), "VehPower": int(rng.integers(4, 16)),
+                  "Density": int(rng.choice(inputs["density"]["options"])),
+                  "VehBrand": rng.choice([b["code"] for b in inputs["brands"]]),
+                  "VehGas": rng.choice(["Regular", "Diesel"]), "Region": rng.choice([x["code"] for x in inputs["regions"]])}
+        d = dashboard.waterfall_rows(dashboard.glm_price(table, driver))
+        base, steps, final = d["euros"].iloc[0], d["euros"].iloc[1:-1], d["euros"].iloc[-1]
+        assert base + steps.sum() == final
+        assert d["label"].iloc[-1] == f"EUR {final:,}"
+    labels = dashboard.waterfall_rows({"base": 100.0, "price": 140.0, "steps": [
+        {"step": "Region", "term": "Region", "level": "R11", "factor": 1.4, "start": 100.0, "end": 140.0}]})["label"]
+    assert list(labels) == ["EUR 100", "×1.40 (+40)", "EUR 140"]
+    assert dashboard.round_ticks(867) == [0, 200, 400, 600, 800] and dashboard.round_ticks(144) == [0, 50, 100]
+
+
+def test_app_prices_match_the_pipeline():
+    # The relativity table and the saved GBM must give exactly the prices the pipeline computed.
+    table, booster, info = _pricing()
+    path = PREDICTIONS_PATH
+    if not path.exists():
+        pytest.skip("outputs/predictions.parquet not present")
+    p = pd.read_parquet(path)
+    h = p[p["is_holdout"]].sample(300, random_state=0)
+    drivers = [{"DrivAge": int(r.DrivAge), "VehAge": int(r.VehAge), "VehPower": int(r.VehPower), "Density": float(r.Density),
+                "VehBrand": r.VehBrand, "VehGas": r.VehGas, "Region": r.Region, "Area": r.Area} for r in h.itertuples()]
+    load = table["large_loss_load"]
+    glm = np.array([dashboard.glm_price(table, d)["price"] for d in drivers])
+    gbm = np.array([dashboard.gbm_price(booster, info, table, d)["price"] for d in drivers])
+    assert np.allclose(glm, h["pp_glm_final"] * load, rtol=1e-9, atol=0)
+    assert np.allclose(gbm, h["pp_gbm_final"] * load, rtol=1e-9, atol=0)
+    # In the data the area type is a banding of density; the app derives it from the density input.
+    pairs = p[~p["Density"].isin([50, 100, 500])].drop_duplicates(["Density", "Area"])
+    derived = [dashboard.area_from_density(d, table["inputs"]["area_bounds"]) for d in pairs["Density"]]
+    assert derived == list(pairs["Area"])
 
 
 def test_dashboard_runs_on_the_saved_files():
@@ -133,19 +223,24 @@ def test_dashboard_runs_on_the_saved_files():
     from streamlit.testing.v1 import AppTest
     app = AppTest.from_file(str(DASHBOARD), default_timeout=120).run()
     assert not app.exception
-    assert [t.label for t in app.tabs] == ["Article", "Quantitative analysis"]
+    assert [t.label for t in app.tabs] == ["Article", "Try it yourself", "Quantitative analysis"]
     assert [t.value for t in app.title] == ["GLM vs GBM"]
     labels = [m.value.split(">")[1].split("<")[0] for m in app.markdown if f"color:{dashboard.ACCENT}" in m.value]
-    assert labels == ["Introduction", "Analysis", "Conclusion",
+    assert labels == ["Introduction", "Analysis", "Conclusion", "Price a driver", "Explore the data",
                       "Data and validation", "Model performance", "Diagnostics", "The no-claims score", "In practice"]
+    assert [m.label for m in app.metric] == ["GLM", "GBM"]
+    before = app.metric[0].value
+    app.selectbox(key="region").set_value("R11").run()
+    app.selectbox(key="explore_factor").set_value("Region").run()
+    assert not app.exception and app.metric[0].value != before
     subheaders = [h.value for h in app.subheader]
-    assert subheaders[:6] == [
-        "The two ways to predict car insurance claims",
-        "At first, the GBM was clearly better, and it relied most on the no-claims score",
-        "The no-claims score appears to contain information from after the claims",
-        "Without it, the GBM's advantage all but disappears",
-        "Without the no-claims score, both models agree on who is high risk",
-        "Method and limitations",
+    assert subheaders == [
+        "The two ways to predict car insurance claims", "The first comparison", "A closer look at the no-claims score",
+        "The final comparison", "How the models rank drivers", "Limitations", "What this means",
+        "Where the price comes from", "Predictions by rating factor",
+        "The data", "The train and holdout split", "How the holdout was used", "Prediction error", "Lorenz curves and Gini",
+        "Double-lift chart", "Actual vs expected by record length", "GLM relativities", "Three timing checks",
+        "Why insurers still use GLMs",
     ]
     assert len(app.table) == 5
     conclusion = next(m.value for m in app.markdown if m.value.startswith("On this data, and without the no-claims score"))

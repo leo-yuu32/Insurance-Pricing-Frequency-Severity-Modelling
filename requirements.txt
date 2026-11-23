@@ -1,10 +1,14 @@
-# What the deployed Streamlit app installs. The app only reads precomputed results
-# (artifacts/dashboard/*.json); the modelling libraries are in requirements-dev.txt.
+# What the deployed Streamlit app installs. The app reads precomputed results (artifacts/dashboard/*.json)
+# and loads the saved final GBM (artifacts/gbm_final.txt) with lightgbm for prediction only; it fits no
+# model. The other modelling libraries are in requirements-dev.txt.
 #
 # Streamlit Community Cloud ignores runtime.txt: select Python 3.13 in the app's Advanced settings.
-# These versions have wheels for Python 3.11 to 3.14.
+# These versions have wheels for Python 3.11 to 3.14. lightgbm needs the OpenMP runtime on Linux,
+# which packages.txt installs on Streamlit Community Cloud.
 
 streamlit==1.53.0
 altair==6.0.0
 pandas==2.3.3
 numpy==2.3.4
+lightgbm==4.6.0
+scipy==1.16.3

@@ -102,6 +102,7 @@ src/
   run_interactions.py     SHAP analysis and GLM extensions (nine factors)
   check_bonus_malus_timing.py   the BonusMalus timing checks
   run_final.py            the final models
+  save_final_gbm.py       the final GBM, refitted, checked and saved for the dashboard
   summarise_models.py     one results file for every model
   build_dashboard_data.py the small files the dashboard reads
   build_rating_engine.py  the Excel rating engine
@@ -129,6 +130,7 @@ python src\run_interactions.py            # about 20 minutes
 python src\check_bonus_malus_timing.py    # about 6 minutes
 python src\tune_gbm.py final              # final GBM tuning (about 10 minutes)
 python src\run_final.py
+python src\save_final_gbm.py              # refits the final GBM once, checks it against the saved predictions, saves it
 python src\summarise_models.py
 python src\build_dashboard_data.py        # the small files the dashboard reads (a few seconds)
 python src\build_rating_engine.py recalc  # "recalc" opens the workbook in Excel to compute and save its values
@@ -137,7 +139,7 @@ python -m pytest
 
 ## Dashboard
 
-The app reads only the small precomputed files in `artifacts/dashboard/`, which `src/build_dashboard_data.py` writes from the saved results. Since it fits no model and does not import the modelling libraries, it installs from `requirements.txt` alone.
+The app reads the small precomputed files in `artifacts/dashboard/`, which `src/build_dashboard_data.py` writes from the saved results, and for its pricing tool it loads the saved final GBM (`artifacts/gbm_final.txt`) with LightGBM for prediction only. Since it fits no model, it installs from `requirements.txt` alone.
 
 ```powershell
 python -m pip install -r requirements.txt

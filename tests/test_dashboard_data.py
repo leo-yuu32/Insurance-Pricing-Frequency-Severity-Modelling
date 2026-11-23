@@ -105,6 +105,55 @@ def test_glm_relativities():
     assert [c["relativity"] for c in out["density"]["curve"]] == pytest.approx([10 ** -0.1, 1.0, 10 ** 0.1])
 
 
+def test_rating_table_is_the_glm_as_relativities():
+    final_glm = {
+        "frequency": {"coefficients": [{"term": "Intercept", "level": "", "coef": -3.0},
+                                       {"term": "DrivAgeBand", "level": "41-50", "coef": 0.0},
+                                       {"term": "DrivAgeBand", "level": "18-19", "coef": 1.0},
+                                       {"term": "LogDensity", "level": "", "coef": 0.1}]},
+        "severity": {"coefficients": [{"term": "Intercept", "level": "", "coef": 7.0},
+                                      {"term": "DrivAgeBand", "level": "41-50", "coef": 0.0}]},
+        "bands": {"DrivAgeBand": [17, 19, 21, 23, 25, 30, 40, 50, 60, 75, 200]},
+        "band_sources": {"DrivAgeBand": "DrivAge"},
+        "pure_premium_rebalance_factor": 1.002, "large_loss_load": 1.19,
+    }
+    t = bd.rating_table(final_glm, 1.003)
+    assert t["frequency"]["base"] == pytest.approx(math.exp(-3.0)) and t["severity"]["base"] == pytest.approx(math.exp(7.0))
+    assert t["frequency"]["relativities"]["DrivAgeBand"] == pytest.approx({"41-50": 1.0, "18-19": math.e})
+    assert t["frequency"]["log_density_coefficient"] == 0.1
+    assert t["bands"]["DrivAgeBand"]["labels"][0] == "18-19" and t["bands"]["DrivAgeBand"]["labels"][-1] == "76+"
+    assert (t["glm_pure_premium_rebalance_factor"], t["gbm_pure_premium_rebalance_factor"], t["large_loss_load"]) == (1.002, 1.003, 1.19)
+
+
+def test_pricing_inputs_are_a_typical_driver():
+    train = pd.DataFrame({"DrivAge": [30, 44, 60], "VehAge": [1, 6, 9], "VehPower": [5, 6, 7], "Density": [20, 393, 3000],
+                          "VehBrand": ["B12", "B2", "B2"], "VehGas": ["Diesel", "Regular", "Regular"],
+                          "Region": ["R24", "R11", "R24"], "Area": ["A", "C", "E"], "Exposure": [0.5, 1.0, 1.0]})
+    i = bd.pricing_inputs(train)
+    assert (i["driver_age"]["default"], i["vehicle_age"]["default"], i["vehicle_power"]["default"]) == (44, 6, 6)
+    assert i["density"]["default"] == 393 and 393 in i["density"]["options"]
+    assert not {50, 100, 500} & set(i["density"]["options"])
+    assert [b["label"] for b in i["brands"]] == ["Brand group 2", "Brand group 12"]
+    assert (i["brand_default"], i["fuel_default"], i["region_default"]) == ("B2", "Regular", "R24")
+    assert [r["label"] for r in i["regions"]] == ["Centre (R24)", "Île-de-France (R11)"]
+    assert sorted(["Rhône-Alpes", "Île-de-France", "Alsace"], key=bd._alphabetical) == ["Alsace", "Île-de-France", "Rhône-Alpes"]
+
+
+def test_explore_levels_and_rates():
+    df = pd.DataFrame({"DrivAge": [18, 20, 21, 90], "Density": [5, 10, 400, 20000], "Exposure": [1.0, 1.0, 0.5, 1.0],
+                       "ClaimNb": [1, 0, 1, 0], "p": [0.2, 0.1, 0.3, 0.05], "VehBrand": ["B10", "B2", "B2", "B1"]})
+    levels, order = bd.explore_levels(df, "DrivAge")
+    assert list(levels) == ["18-20", "18-20", "21-25", "81+"] and order[0] == "18-20"
+    levels, order = bd.explore_levels(df, "Density")
+    assert list(levels) == ["Under 10", "10 to 30", "300 to 1,000", "10,000 and over"]
+    levels, order = bd.explore_levels(df, "VehBrand")
+    assert order == ["Group 1", "Group 2", "Group 10"]
+    levels, order = bd.explore_levels(df, "DrivAge")
+    rows = {r["level"]: r for r in bd.rates_by_level(df, levels, order, {"model": "p"})}
+    assert rows["18-20"]["actual"] == pytest.approx(0.5) and rows["18-20"]["model"] == pytest.approx(0.15)
+    assert list(rows) == ["18-20", "21-25", "81+"]
+
+
 def _saved(name):
     path = OUTPUTS / f"{name}.json"
     if not path.exists():

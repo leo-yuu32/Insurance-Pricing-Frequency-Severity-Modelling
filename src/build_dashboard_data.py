@@ -13,6 +13,7 @@ or is a descriptive summary of the saved predictions.
 """
 
 import json
+import unicodedata
 from pathlib import Path
 
 import numpy as np
@@ -20,6 +21,7 @@ import pandas as pd
 
 import metrics
 from check_bonus_malus_timing import exposure_class
+from design import _band_labels
 from run_glm import OUTPUTS, PREDICTIONS_PATH
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -40,6 +42,28 @@ LORENZ_POINTS = 201
 LIFT_GROUPS = 10
 STAIRCASE_VALUES = {"50": "50", "62 (surcharged at the last renewal)": "62", "58 (one renewal later)": "58",
                     "55 (two renewals later)": "55", "52 (three renewals later)": "52"}
+
+# The dataset's region codes are the INSEE codes of the French regions as they were before 2016.
+REGION_NAMES = {"R11": "Île-de-France", "R21": "Champagne-Ardenne", "R22": "Picardie", "R23": "Haute-Normandie",
+                "R24": "Centre", "R25": "Basse-Normandie", "R26": "Bourgogne", "R31": "Nord-Pas-de-Calais",
+                "R41": "Lorraine", "R42": "Alsace", "R43": "Franche-Comté", "R52": "Pays de la Loire",
+                "R53": "Bretagne", "R54": "Poitou-Charentes", "R72": "Aquitaine", "R73": "Midi-Pyrénées",
+                "R74": "Limousin", "R82": "Rhône-Alpes", "R83": "Auvergne", "R91": "Languedoc-Roussillon",
+                "R93": "Provence-Alpes-Côte d'Azur", "R94": "Corse"}
+FUEL_NAMES = {"Regular": "Petrol", "Diesel": "Diesel"}
+# Steps of the density slider (inhabitants per km², roughly doubling), with the training median added.
+# None is 50, 100 or 500, the values at which two area types meet.
+DENSITY_OPTIONS = [1, 2, 4, 8, 15, 30, 60, 120, 250, 800, 1600, 3200, 6400, 13000, 27000]
+# How each rating factor is grouped on "Explore the data": right-closed bands as in the GLM, or density bands.
+EXPLORE_BANDS = {"DrivAge": [17, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 200],
+                 "VehAge": [-1, 0, 1, 2, 3, 4, 5, 7, 10, 15, 20, 200],
+                 "VehPower": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 99]}
+DENSITY_BANDS = [0, 10, 30, 100, 300, 1000, 3000, 10000, 30000]
+DENSITY_BAND_LABELS = ["Under 10", "10 to 30", "30 to 100", "100 to 300", "300 to 1,000", "1,000 to 3,000",
+                       "3,000 to 10,000", "10,000 and over"]
+EXPLORE_NAMES = {"DrivAge": "Driver age", "VehAge": "Vehicle age", "VehPower": "Vehicle power",
+                 "Density": "Population density (people per km²)", "VehBrand": "Brand group", "VehGas": "Fuel type",
+                 "Region": "Region", "Area": "Area type (A most rural, F most urban)"}
 
 
 def relative_reduction(reduction, reference_deviance):
@@ -189,6 +213,99 @@ def glm_relativities(coefficients, density_grid, density_reference):
     return {"factors": out, "density": density}
 
 
+def _brand_number(code):
+    return int(code[1:])
+
+
+def _alphabetical(name):
+    """Sort key that ignores accents, so that Île-de-France sorts under I."""
+    return unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower()
+
+
+def rating_table(final_glm, gbm_pure_premium_factor):
+    """The final GLM as relativity tables (exp of each coefficient), with everything else needed to
+    price a policy: the base values, the density coefficient, the bands and the scalar factors."""
+    def part(model):
+        out = {"relativities": {}}
+        for c in final_glm[model]["coefficients"]:
+            if c["term"] == "Intercept":
+                out["base"] = float(np.exp(c["coef"]))
+            elif c["term"] == "LogDensity":
+                out["log_density_coefficient"] = c["coef"]
+            else:
+                out["relativities"].setdefault(c["term"], {})[c["level"]] = float(np.exp(c["coef"]))
+        return out
+    bands = {name: {"source": final_glm["band_sources"][name], "edges": edges, "labels": _band_labels(edges)}
+             for name, edges in final_glm["bands"].items()}
+    return {"frequency": part("frequency"), "severity": part("severity"), "bands": bands,
+            "glm_pure_premium_rebalance_factor": final_glm["pure_premium_rebalance_factor"],
+            "gbm_pure_premium_rebalance_factor": gbm_pure_premium_factor,
+            "large_loss_load": final_glm["large_loss_load"]}
+
+
+def pricing_inputs(train):
+    """Ranges, labels and defaults for the pricing tool. The defaults are a typical driver: the median
+    of each numeric factor and the level with the most exposure for the others, in the training data."""
+    def most_exposure(col):
+        return train.groupby(col)["Exposure"].sum().idxmax()
+    density = int(train["Density"].median())
+    bounds = train.groupby("Area")["Density"].agg(["min", "max"])
+    return {
+        "driver_age": {"min": 18, "max": 90, "default": int(train["DrivAge"].median())},
+        "vehicle_age": {"min": 0, "max": 25, "default": int(train["VehAge"].median())},
+        "vehicle_power": {"min": int(train["VehPower"].min()), "max": int(train["VehPower"].max()),
+                          "default": int(train["VehPower"].median())},
+        "density": {"options": sorted(set(DENSITY_OPTIONS) | {density}), "default": density},
+        "brands": [{"code": b, "label": f"Brand group {_brand_number(b)}"}
+                   for b in sorted(train["VehBrand"].unique(), key=_brand_number)],
+        "brand_default": most_exposure("VehBrand"),
+        "fuels": [{"code": f, "label": FUEL_NAMES[f]} for f in ["Regular", "Diesel"]],
+        "fuel_default": most_exposure("VehGas"),
+        "regions": [{"code": r, "label": f"{REGION_NAMES[r]} ({r})"}
+                    for r in sorted(train["Region"].unique(), key=lambda r: _alphabetical(REGION_NAMES[r]))],
+        "region_default": most_exposure("Region"),
+        "area_bounds": [{"area": a, "min": float(r["min"]), "max": float(r["max"])} for a, r in bounds.iterrows()],
+    }
+
+
+def explore_levels(df, factor):
+    """The display group of every policy for one rating factor, and the groups in display order."""
+    if factor in EXPLORE_BANDS:
+        edges = EXPLORE_BANDS[factor]
+        labels = _band_labels(edges)
+        return pd.cut(df[factor], bins=edges, labels=labels).astype(str), labels
+    if factor == "Density":
+        return pd.cut(df[factor], bins=DENSITY_BANDS, labels=DENSITY_BAND_LABELS, right=False).astype(str), DENSITY_BAND_LABELS
+    if factor == "VehBrand":
+        names = {b: f"Group {_brand_number(b)}" for b in df[factor].unique()}
+        return df[factor].map(names), [names[b] for b in sorted(names, key=_brand_number)]
+    if factor == "VehGas":
+        return df[factor].map(FUEL_NAMES), [FUEL_NAMES[f] for f in ["Regular", "Diesel"]]
+    if factor == "Region":
+        return df[factor].map(REGION_NAMES), sorted((REGION_NAMES[r] for r in df[factor].unique()), key=_alphabetical)
+    return df[factor].astype(str), sorted(df[factor].astype(str).unique())
+
+
+def rates_by_level(df, levels, order, predictions):
+    """Exposure, claims, actual rate and each model's average predicted rate for every group in `order`."""
+    d = df.assign(level=np.asarray(levels))
+    g = d.groupby("level").agg(exposure=("Exposure", "sum"), claims=("ClaimNb", "sum"))
+    for name, col in predictions.items():
+        g[name] = (d[col] * d["Exposure"]).groupby(d["level"]).sum() / g["exposure"]
+    g["actual"] = g["claims"] / g["exposure"]
+    g = g.reindex([o for o in order if o in g.index])
+    return [{"level": level, **{k: float(v) for k, v in row.items()}} for level, row in g.iterrows()]
+
+
+def explore_tables(holdout):
+    predictions = {"glm": "freq_glm_final", "gbm": "freq_gbm_final"}
+    out = []
+    for factor, name in EXPLORE_NAMES.items():
+        levels, order = explore_levels(holdout, factor)
+        out.append({"factor": factor, "name": name, "rows": rates_by_level(holdout, levels, order, predictions)})
+    return out
+
+
 def timing_checks(timing):
     """The three BonusMalus timing checks (training rows only), from the saved results."""
     by_class = {}
@@ -254,6 +371,9 @@ def build(policies, saved):
         "relativities": glm_relativities(saved["final_glm"]["frequency"]["coefficients"], grid, float(np.median(density))),
         "record_length": {"data": "holdout", "rows": record_length},
         "timing_checks": timing_checks(saved["bonus_malus_timing"]),
+        "rating_table": {**rating_table(saved["final_glm"], final["gbm_final"]["pure_premium_rebalance_factor"]),
+                         "inputs": pricing_inputs(train)},
+        "explore": {"data": "holdout, final models", "factors": explore_tables(h)},
     }
 
 
