@@ -48,7 +48,7 @@ def test_summary_parts_and_numbers(toy_predictions):
 
 def test_interval_sentence():
     assert "excludes zero" in dashboard.interval_sentence({"deviance_reduction": 0.002, "bootstrap_95_low": 0.001, "bootstrap_95_high": 0.003})
-    assert "does not beat" in dashboard.interval_sentence({"deviance_reduction": 0.0003, "bootstrap_95_low": -0.0002, "bootstrap_95_high": 0.0008})
+    assert "not distinguishable from zero" in dashboard.interval_sentence({"deviance_reduction": 0.0003, "bootstrap_95_low": -0.0002, "bootstrap_95_high": 0.0008})
     assert "GLM scores better" in dashboard.interval_sentence({"deviance_reduction": -0.002, "bootstrap_95_low": -0.003, "bootstrap_95_high": -0.001})
 
 

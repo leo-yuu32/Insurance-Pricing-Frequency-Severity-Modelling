@@ -6,21 +6,17 @@ Dashboard: https://insurance-pricing-dashboard.streamlit.app/
 
 The rebuild of this project was developed with an AI coding assistant (Claude Code) under my direction.
 
+## Aim
+
+We ask how much a gradient-boosted model (GBM) improves on a Poisson GLM as a model of claim frequency. Pricing teams use GLMs because each rating factor has a table of relativities that can be read and checked, and so the comparison measures what that interpretability costs in accuracy.
+
 ## Results
 
-In this section we compare the final GLM and GBM on the holdout, and then give the earlier nine-factor comparison that led us to set `BonusMalus` aside. All figures are on a holdout of 133,726 policies (70,827 policy-years, 5,215 claims). The holdout was not used for fitting or tuning, and with one exception it was not used for choosing model terms either. The exception is a `BonusMalus` by `Region` interaction, which we dropped from the nine-factor GLM after seeing its holdout result (the bootstrap interval for its improvement included zero).
+In this section we give the results in the order in which we found them, beginning with a comparison on all nine rating factors and ending with the final comparison without `BonusMalus`. All figures are on a holdout of 133,726 policies (70,827 policy-years, 5,215 claims). The holdout was not used for fitting or tuning, and with one exception it was not used for choosing model terms either. The exception is a `BonusMalus` by `Region` interaction, which we dropped from the nine-factor GLM after seeing its holdout result (the bootstrap interval for its improvement included zero).
 
-The final models use eight rating factors and leave out `BonusMalus`, for the reasons given under Caveats below.
+### First comparison: nine rating factors
 
-| Frequency model | Poisson deviance | Deviance explained | Gini | Actual / expected |
-|---|---|---|---|---|
-| Null (training frequency) | 0.47703 | 0 | 0 | |
-| GLM (statsmodels, 55 parameters) | 0.46866 | 1.75% | 0.179 | 0.998 |
-| GBM (LightGBM, tuned by cross-validation) | 0.46833 | 1.82% | 0.183 | 0.998 |
-
-The GLM's deviance exceeds the GBM's by 0.00033, with a 95% paired bootstrap interval of -0.00019 to 0.00085. Since the interval includes zero, we conclude that on these eight factors the GBM does not beat the GLM. The double-lift chart (`plots/double_lift_final_glm_vs_gbm.png`) agrees with this. The GBM is closer to the actual frequency in six of the ten groups and the GLM in four, and in both end groups, where the two models disagree most, the actual frequency lies between them.
-
-Before reaching these final models we compared the same models with `BonusMalus` included (nine factors), and we now set that comparison aside.
+We first compared the models on all nine freMTPL2 rating factors, including the bonus-malus coefficient `BonusMalus`.
 
 | Frequency model | Poisson deviance | Deviance explained | Gini |
 |---|---|---|---|
@@ -29,17 +25,33 @@ Before reaching these final models we compared the same models with `BonusMalus`
 | Additive GBM (no interactions) | 0.44876 | 5.93% | 0.319 |
 | GBM | 0.44780 | 6.13% | 0.320 |
 
-With `BonusMalus` the GBM leads by 0.0061 (interval 0.0049 to 0.0073), and one extra GLM term closes two thirds of that gap. This term flags bonus-malus scores that can only be reached through a claim. A single parameter closing most of the gap looked too good, and so it prompted a check of the factor itself, which we describe below. We therefore keep these figures as the analysis that exposed the problem, not as a pricing result.
+The GBM leads the GLM by 0.0061 (95% paired bootstrap interval 0.0049 to 0.0073). To find where this lead comes from, we computed SHAP values for the GBM on a sample of training policies. They point to `BonusMalus`, whose mean absolute SHAP value is three times that of the next factor, and its SHAP dependence plot is not a smooth curve but has spikes at the scores that can only be reached through a claim. We therefore gave the GLM one extra term flagging those scores (the ladder indicator), and this single parameter closes two thirds of the gap. The additive GBM, in which each tree uses one factor only, splits the gap approximately into the shapes of single factors (84%) and interactions between factors (16%), and so most of the GBM's lead comes from shapes that the GLM's bands only approximate.
+
+### Investigation of `BonusMalus`
+
+A single parameter closing two thirds of the gap looked too good, and so we investigated the factor itself, using the training data only. The dataset does not say when the bonus-malus coefficient was recorded. If it was recorded at the start of the policy, it is a legitimate rating factor. If it was recorded later, a claim in the data may already have raised it, and the factor then partly records the outcome it is used to predict.
+
+Three checks suggest the second reading. The effect of `BonusMalus` is about three times stronger in full-year records than in records under half a year. In full-year records, 32% of policies whose score was raised at the last renewal have a claim in the same period, against 3.6% at the minimum score. And which scores carry the excess frequency shifts with the policy number. We therefore treat the factor as probable leakage. The evidence is strong but unproven, and so the final models leave the factor out. Note that a real insurer knows each driver's coefficient at the start of the policy and would use it, and so the final model is what this dataset supports cleanly. The checks are in `src/check_bonus_malus_timing.py`, and their results are in `outputs/bonus_malus_timing.json`.
+
+### Final comparison: eight rating factors
+
+We then fitted the final GLM and GBM on the eight remaining rating factors, with the GBM retuned by cross-validation on the training data, and scored each once on the holdout.
+
+| Frequency model | Poisson deviance | Deviance explained | Gini | Actual / expected |
+|---|---|---|---|---|
+| Null (training frequency) | 0.47703 | 0 | 0 | |
+| GLM (statsmodels, 55 parameters) | 0.46866 | 1.75% | 0.179 | 0.998 |
+| GBM (LightGBM, tuned by cross-validation) | 0.46833 | 1.82% | 0.183 | 0.998 |
+
+The GLM's deviance exceeds the GBM's by 0.00033, with a 95% paired bootstrap interval of -0.00019 to 0.00085, and so the GBM's edge is small and not distinguishable from zero. Furthermore, over 90% of the GBM's lead in the first comparison disappears once `BonusMalus` is removed. The double-lift chart (`plots/double_lift_final_glm_vs_gbm.png`) agrees with this. The GBM is closer to the actual frequency in six of the ten groups and the GLM in four, and in both end groups, where the two models disagree most, the actual frequency lies between them.
 
 ### Caveats
 
-We note three limitations of these results.
+We note two further limitations of these results.
 
-The first concerns the timing of `BonusMalus`. The dataset does not say when the bonus-malus coefficient was recorded, and three checks on the training data suggest that it was recorded after some of the claims it is used to predict. Its effect is about three times stronger in full-year records than in records under half a year. In full-year records, 32% of policies whose score was raised at the last renewal have a claim in the same period, against 3.6% at the minimum score. And which scores carry the excess frequency shifts with the policy number. The evidence is strong but unproven, and so the final models leave the factor out. Note that a real insurer knows each driver's coefficient at the start of the policy and would use it, and so the final model is what this dataset supports cleanly. The checks are in `src/check_bonus_malus_timing.py`, and their results are in `outputs/bonus_malus_timing.json`.
+The first is holdout reuse. The holdout was used to compare several nine-factor models, and one selection decision (dropping an interaction term) was made with those results in view. The final models were specified and committed before they were scored (commit [`f954934`](https://github.com/leo-yuu32/Insurance-Pricing-Frequency-Severity-Modelling/commit/f954934)), but the final figures may still be mildly optimistic.
 
-The second is holdout reuse. The holdout was used to compare several nine-factor models, and one selection decision (dropping an interaction term) was made with those results in view. The final models were specified and committed before they were scored (commit [`f954934`](https://github.com/leo-yuu32/Insurance-Pricing-Frequency-Severity-Modelling/commit/f954934)), but the final figures may still be mildly optimistic.
-
-The third is mis-calibration by length of record. Claim frequency is not proportional to exposure in this data: on the training data it is 0.054 claims per policy-year for full-year records and 0.112 for records under half a year. Both models take exposure as a log offset with its coefficient fixed at 1, which assumes proportionality, and therefore on the holdout both over-predict full-year records (actual over expected 0.80) and under-predict records under half a year (1.43). The same pattern appears on the training data (0.77 and 1.42 for the final GLM). The standard fix is to fit log(exposure) as a covariate with its own coefficient instead of as a fixed offset. We did not apply it, since the final models had already been specified and scored on the holdout, and changing them in response to this result would be one more choice made with the holdout in view. Note also that, before scoring, we had deliberately kept exposure out of the models as a covariate. It is not known why short records claim more, and so a covariate could learn how records are created rather than risk.
+The second is mis-calibration by length of record. Claim frequency is not proportional to exposure in this data: on the training data it is 0.054 claims per policy-year for full-year records and 0.112 for records under half a year. Both models take exposure as a log offset with its coefficient fixed at 1, which assumes proportionality, and therefore on the holdout both over-predict full-year records (actual over expected 0.80) and under-predict records under half a year (1.43). The same pattern appears on the training data (0.77 and 1.42 for the final GLM). The standard fix is to fit log(exposure) as a covariate with its own coefficient instead of as a fixed offset. We did not apply it, since the final models had already been specified and scored on the holdout, and changing them in response to this result would be one more choice made with the holdout in view. Note also that, before scoring, we had deliberately kept exposure out of the models as a covariate. It is not known why short records claim more, and so a covariate could learn how records are created rather than risk.
 
 ## Method
 

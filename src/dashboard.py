@@ -14,7 +14,7 @@ import pandas as pd
 import streamlit as st
 
 RESULTS_PATH = Path(__file__).resolve().parent.parent / "outputs" / "model_comparison.json"
-SERIES_COLOURS = {"Actual": "#222222", "GLM": "#1f77b4", "GBM": "#d62728"}
+SERIES_COLOURS = {"Actual": "#BDBDBD", "GLM": "#1f77b4", "GBM": "#d62728"}
 
 
 def load_results(path=RESULTS_PATH):
@@ -44,7 +44,7 @@ def interval_sentence(diff, better="GBM", worse="GLM"):
         return text + f"Since the interval excludes zero, the {better} scores better on the holdout."
     if high < 0:
         return text + f"Since the interval lies below zero, the {worse} scores better on the holdout."
-    return text + f"The interval includes zero, so the {better} does not beat the {worse} on these factors."
+    return text + f"The interval includes zero, so the {better}'s edge is small and not distinguishable from zero."
 
 
 def double_lift_long(rows):
