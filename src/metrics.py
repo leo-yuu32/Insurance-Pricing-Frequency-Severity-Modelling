@@ -1,4 +1,4 @@
-"""Metrics shared by every model. Frequency metrics are primary (see docs/DECISIONS.md).
+"""Metrics shared by every model. Frequency metrics are primary.
 
 Conventions: `pred_rate` is a prediction per unit of exposure (claims or euros per policy-year),
 `actual` is the observed total for the policy (claim count or loss), `exposure` is in policy-years.

@@ -1,7 +1,7 @@
 """Evidence for the monotone-constraint decision, using cross-validation on TRAINING data only.
 
 Scores the tuned GBM parameters with no constraint on BonusMalus and with each of LightGBM's
-three ways of enforcing an increasing constraint. Prints the table quoted in docs/DECISIONS.md.
+three ways of enforcing an increasing constraint, and prints the results as a table.
 
 Run from the repo root:  python src/compare_gbm_constraints.py
 """

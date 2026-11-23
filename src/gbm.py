@@ -19,12 +19,12 @@ from metrics import poisson_deviance
 
 FEATURES = ["Area", "VehPower", "VehAge", "DrivAge", "BonusMalus", "VehBrand", "VehGas", "Density", "Region"]
 # The final model leaves out BonusMalus, which appears to be recorded after some of the claims it
-# would predict (docs/DECISIONS.md, D30 and D31). The nine-factor model is kept as a comparison.
+# would predict (see README.md, Caveats). The nine-factor model is kept as a comparison.
 FINAL_FEATURES = [f for f in FEATURES if f != "BonusMalus"]
 # Brand and region are encoded as integers ordered by training claim frequency, so every split is
 # numeric. SHAP interaction values do not support LightGBM's native categorical splits.
 ORDERED_BY_FREQUENCY = ["VehBrand", "Region"]
-# Used only when monotone=True. The primary model is unconstrained (docs/DECISIONS.md, D17).
+# Used only when monotone=True. The primary model is unconstrained.
 MONOTONE_INCREASING = ["BonusMalus"]
 MAX_ROUNDS = 3000
 EARLY_STOPPING_ROUNDS = 50

@@ -188,3 +188,9 @@ site/
 !src/config.py
 !README.md
 !.flake8
+
+# ============================================================================
+# Private notes (kept on disk, not in the repository)
+# ============================================================================
+private/
+CLAUDE.md

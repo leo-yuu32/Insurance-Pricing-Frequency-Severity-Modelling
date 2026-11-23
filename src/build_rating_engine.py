@@ -112,7 +112,7 @@ def build_readme(wb, final_glm):
         ("Rating engine: final GLM", None),
         ("", None),
         ("What it does", "Prices a motor third-party liability policy from its rating factors with the final frequency GLM "
-                         "(Poisson) and severity GLM (Gamma), both fitted with statsmodels. BonusMalus is not used (see docs/DECISIONS.md, D30 and D31)."),
+                         "(Poisson) and severity GLM (Gamma), both fitted with statsmodels. BonusMalus is not used (see the Caveats section of the project README)."),
         ("Price", "Pure premium per policy-year = frequency x severity x rebalancing factor x large-loss load."),
         ("Factors", "The rating tables: one row per term and level, with its coefficient and relativity. Reference levels have relativity 1."),
         ("Bands", "How driver age, vehicle age and vehicle power are banded."),

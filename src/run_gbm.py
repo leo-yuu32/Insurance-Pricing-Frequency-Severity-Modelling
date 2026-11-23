@@ -72,7 +72,7 @@ def main():
     result["gbm"] = add_model(policies, "gbm", tuning)
     models = ["gbm"]
     # The same model with BonusMalus constrained to be increasing, tuned separately, to record
-    # what the constraint costs (docs/DECISIONS.md).
+    # what the constraint costs.
     monotone_path = OUTPUTS / "gbm_tuning_monotone.json"
     if monotone_path.exists():
         result["gbm_monotone"] = add_model(policies, "gbm_monotone", json.loads(monotone_path.read_text()), monotone=True)

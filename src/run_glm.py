@@ -87,7 +87,7 @@ def main():
     (OUTPUTS / "glm_severity_summary.txt").write_text(summary_text(sev, sev_design.columns), encoding="utf-8")
 
     # Pure premium on the capped basis, rebalanced to capped training losses. The losses above
-    # the cap are reported separately as one flat large-loss load (see docs/DECISIONS.md).
+    # the cap are reported separately as one flat large-loss load.
     train = policies[~policies["is_holdout"]]
     freq_factor = rebalance_factor(train["ClaimNb"], train["freq_glm"], train["Exposure"])
     pp_factor = rebalance_factor(train["TotalLossCapped"], train["freq_glm"] * train["sev_glm"], train["Exposure"])

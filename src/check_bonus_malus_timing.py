@@ -2,7 +2,7 @@
 
 freMTPL2 does not document this. If the recorded coefficient already reflects claims that are
 in the claim count, it is partly an outcome and not a rating factor (target leakage). This
-script collects the evidence, on TRAINING rows only. Read it with docs/DECISIONS.md, D30.
+script collects the evidence, on TRAINING rows only.
 
 Run from the repo root, after run_glm.py (about 6 minutes):
     python src/check_bonus_malus_timing.py

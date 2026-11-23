@@ -1,7 +1,6 @@
 """One design-matrix builder for the GLMs (statsmodels and the NumPy solver fit the same matrix).
 
-Banding and term choices are explained in docs/DECISIONS.md. All cut-points were chosen on
-training data only.
+All cut-points were chosen on training data only.
 """
 
 import numpy as np
@@ -28,7 +27,7 @@ CLAIM_FREE_LADDER = [50, 51, 54, 57, 60, 64, 68, 72, 76, 80, 85, 90, 95, 100]
 
 # The nine-factor frequency GLM, kept as a comparison. Area is left out because it is a banding of Density.
 FREQUENCY_TERMS = ["DrivAgeBand", "VehAgeBand", "VehPowerBand", "BonusMalusBand", "LogDensity", "VehBrand", "VehGas", "Region"]
-# The final frequency GLM: the same terms without BonusMalus (docs/DECISIONS.md, D30 and D31).
+# The final frequency GLM: the same terms without BonusMalus (see README.md, Caveats).
 FINAL_FREQUENCY_TERMS = [t for t in FREQUENCY_TERMS if t != "BonusMalusBand"]
 # The severity GLM. Driver age is the only factor that improved cross-validated Gamma deviance
 # over an intercept-only model (src/compare_glm_designs.py).

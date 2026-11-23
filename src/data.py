@@ -1,7 +1,7 @@
 """Load freMTPL2, apply the documented cleaning and make the train/holdout split.
 
 Every model in the rebuilt pipeline gets its data from `load_dataset()`.
-Each cleaning step is explained in docs/DECISIONS.md.
+The cleaning steps are summarised in README.md (Method).
 """
 
 import pickle

@@ -1,6 +1,6 @@
 """Evidence for the GLM design choices, using cross-validation on the TRAINING data only.
 
-Prints the tables quoted in docs/DECISIONS.md. Nothing here touches the holdout.
+Prints the comparison tables. Nothing here touches the holdout.
 
 Run from the repo root:  python src/compare_glm_designs.py
 """

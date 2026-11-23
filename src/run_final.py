@@ -1,7 +1,7 @@
 """Fit the final models (the eight rating factors other than BonusMalus) and score them on the holdout.
 
-The specification was recorded in docs/DECISIONS.md (D31) and committed before this script was
-first run. Nothing here is chosen by looking at the holdout.
+The specification was committed (f954934) before this script was first run. Nothing here is
+chosen by looking at the holdout.
 
 Run from the repo root, after run_glm.py, run_gbm.py and `python src/tune_gbm.py final`:
     python src/run_final.py

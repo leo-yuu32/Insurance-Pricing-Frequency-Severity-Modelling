@@ -138,7 +138,7 @@
     ]
   },
   "with_bonus_malus": {
-    "title": "Comparison with BonusMalus (nine factors): set aside, see docs/DECISIONS.md D30",
+    "title": "Comparison with BonusMalus (nine factors): set aside",
     "models": {
       "glm": {
         "label": "GLM",

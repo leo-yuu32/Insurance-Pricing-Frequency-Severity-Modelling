@@ -7,7 +7,7 @@ Reads  outputs/predictions.parquet.
 Writes outputs/model_comparison.json, the only file the dashboard reads. It has three parts:
   final               the final GLM and GBM (eight factors, without BonusMalus): holdout metrics,
                       the GLM-minus-GBM deviance with a bootstrap interval, the double-lift table
-  with_bonus_malus    the nine-factor models, kept as a labelled comparison (docs/DECISIONS.md, D30)
+  with_bonus_malus    the nine-factor models, kept as a labelled comparison
   other_models_scored_on_the_holdout
                       the remaining models that were scored on the holdout, so that every use
                       of the holdout is on record
@@ -78,7 +78,7 @@ def build_summary(policies):
     nine = [m for m in WITH_BONUS_MALUS if m in present]
     if "glm" in nine and "gbm" in nine:
         dev = {}
-        block = {"title": "Comparison with BonusMalus (nine factors): set aside, see docs/DECISIONS.md D30",
+        block = {"title": "Comparison with BonusMalus (nine factors): set aside",
                  "models": {}, "differences": {}, "gap_closed": {}}
         for m in nine:
             block["models"][m] = model_row(train, h, m, WITH_BONUS_MALUS[m])

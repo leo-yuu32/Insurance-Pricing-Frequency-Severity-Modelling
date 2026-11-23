@@ -41,9 +41,9 @@ def interval_sentence(diff, better="GBM", worse="GLM"):
     est, low, high = diff["deviance_reduction"], diff["bootstrap_95_low"], diff["bootstrap_95_high"]
     text = f"The {better}'s deviance is lower than the {worse}'s by {est:.5f} (95% bootstrap interval {low:.5f} to {high:.5f}). "
     if low > 0:
-        return text + f"The interval excludes zero: the {better} scores better on the holdout."
+        return text + f"Since the interval excludes zero, the {better} scores better on the holdout."
     if high < 0:
-        return text + f"The interval lies below zero: the {worse} scores better on the holdout."
+        return text + f"Since the interval lies below zero, the {worse} scores better on the holdout."
     return text + f"The interval includes zero, so the {better} does not beat the {worse} on these factors."
 
 
@@ -72,8 +72,8 @@ def main():
 
     st.title("Motor claim frequency: GLM and GBM")
     st.markdown(
-        f"French motor third-party liability policies (freMTPL2). Both models predict claim frequency, with exposure as an "
-        f"offset. They are fitted on {r['train']['policies']:,} training policies and scored once on "
+        f"We compare two models of claim frequency on French motor third-party liability policies (freMTPL2). Both take "
+        f"exposure as an offset, and both are fitted on {r['train']['policies']:,} training policies and scored once on "
         f"{r['holdout']['policies']:,} holdout policies ({r['holdout']['claims']:,} claims)."
     )
 
@@ -84,9 +84,9 @@ def main():
     st.subheader("Double-lift chart, GLM against GBM")
     st.altair_chart(double_lift_chart(final["double_lift"]), width="stretch")
     st.markdown(
-        "Holdout policies are sorted by the ratio of the GBM's prediction to the GLM's and cut into ten groups of equal "
-        "exposure. Each group shows the actual claim frequency and each model's average prediction. Where the two models "
-        "disagree, the better one is the one whose line stays closer to the actual line."
+        "We sort the holdout policies by the ratio of the GBM's prediction to the GLM's and cut them into ten groups of "
+        "equal exposure, and for each group we plot the actual claim frequency and each model's average prediction. Where "
+        "the two models disagree, the better model is the one whose line stays closer to the actual line."
     )
 
     st.header("With BonusMalus: the comparison that was set aside")
@@ -94,22 +94,23 @@ def main():
     ladder = nine["gap_closed"].get("glm_ladder", {}).get("share_of_gap_closed_deviance")
     st.markdown(
         interval_sentence(nine["differences"]["glm_to_gbm"])
-        + (f" One extra GLM term, flagging bonus-malus scores that only a past claim can produce, closes {ladder:.0%} of that gap." if ladder else "")
+        + (f" One extra GLM term, flagging bonus-malus scores that can only be reached through a claim, closes {ladder:.0%} of that gap." if ladder else "")
     )
     st.markdown(
-        "That result is why the factor was investigated. Three checks on the training data suggest that `BonusMalus` was "
-        "recorded after some of the claims it is used to predict. Its effect is several times stronger in full-year records "
-        "than in short ones. In full-year records, nearly a third of the policies whose score was raised at the last renewal have a "
-        "claim in the same period. And which scores carry the excess shifts with the policy number. The evidence is strong "
-        "but unproven: the dataset does not say when the score was recorded. These figures are therefore kept as the "
-        "analysis that exposed the problem, not as a pricing result, and the final models leave the factor out."
+        "This result led us to investigate the factor itself. Three checks on the training data suggest that `BonusMalus` "
+        "was recorded after some of the claims it is used to predict. Its effect is several times stronger in full-year "
+        "records than in short ones. In full-year records, nearly a third of the policies whose score was raised at the last "
+        "renewal have a claim in the same period. And which scores carry the excess shifts with the policy number. Since the "
+        "dataset does not say when the score was recorded, the evidence is strong but unproven. We therefore keep these "
+        "figures as the analysis that exposed the problem, not as a pricing result, and the final models leave the factor out."
     )
 
     st.caption(
         "Poisson deviance is per policy-year (lower is better). Gini orders policies by predicted frequency and is 0 for a "
-        "model with no discrimination. Each model gets one scalar rebalancing factor fitted on training data. The holdout "
-        "was used for several comparisons and one selection decision before the final models were fixed, so their figures "
-        "may be mildly optimistic. The GLMs are fitted with statsmodels and independently reproduced by a NumPy IRLS solver."
+        "model with no discrimination. Each model gets one scalar rebalancing factor fitted on training data. Note that the "
+        "holdout was used for several comparisons and one selection decision before the final models were fixed, and so "
+        "their figures may be mildly optimistic. The GLMs are fitted with statsmodels and independently reproduced by a "
+        "NumPy IRLS solver."
     )
 
 
