@@ -1,0 +1,166 @@
+{
+ "data": "training rows, full-year records",
+ "rows": [
+  {
+   "score": 50,
+   "policies": 96733,
+   "exposure": 96733.0,
+   "claims": 3548,
+   "rate": 0.036678279387592654
+  },
+  {
+   "score": 51,
+   "policies": 3135,
+   "exposure": 3135.0,
+   "claims": 83,
+   "rate": 0.026475279106858055
+  },
+  {
+   "score": 52,
+   "policies": 1135,
+   "exposure": 1135.0,
+   "claims": 104,
+   "rate": 0.09162995594713656
+  },
+  {
+   "score": 53,
+   "policies": 539,
+   "exposure": 539.0,
+   "claims": 52,
+   "rate": 0.09647495361781076
+  },
+  {
+   "score": 54,
+   "policies": 3054,
+   "exposure": 3054.0,
+   "claims": 96,
+   "rate": 0.03143418467583497
+  },
+  {
+   "score": 55,
+   "policies": 1223,
+   "exposure": 1223.0,
+   "claims": 146,
+   "rate": 0.11937857726901063
+  },
+  {
+   "score": 56,
+   "policies": 629,
+   "exposure": 629.0,
+   "claims": 77,
+   "rate": 0.12241653418124006
+  },
+  {
+   "score": 57,
+   "policies": 2988,
+   "exposure": 2988.0,
+   "claims": 107,
+   "rate": 0.035809906291834004
+  },
+  {
+   "score": 58,
+   "policies": 1206,
+   "exposure": 1206.0,
+   "claims": 258,
+   "rate": 0.21393034825870647
+  },
+  {
+   "score": 59,
+   "policies": 490,
+   "exposure": 490.0,
+   "claims": 47,
+   "rate": 0.09591836734693877
+  },
+  {
+   "score": 60,
+   "policies": 2484,
+   "exposure": 2484.0,
+   "claims": 104,
+   "rate": 0.04186795491143317
+  },
+  {
+   "score": 62,
+   "policies": 1326,
+   "exposure": 1326.0,
+   "claims": 449,
+   "rate": 0.33861236802413275
+  },
+  {
+   "score": 63,
+   "policies": 530,
+   "exposure": 530.0,
+   "claims": 93,
+   "rate": 0.17547169811320754
+  },
+  {
+   "score": 64,
+   "policies": 2473,
+   "exposure": 2473.0,
+   "claims": 99,
+   "rate": 0.04003234937323089
+  },
+  {
+   "score": 67,
+   "policies": 429,
+   "exposure": 429.0,
+   "claims": 93,
+   "rate": 0.21678321678321677
+  },
+  {
+   "score": 68,
+   "policies": 2224,
+   "exposure": 2224.0,
+   "claims": 114,
+   "rate": 0.051258992805755396
+  },
+  {
+   "score": 72,
+   "policies": 2042,
+   "exposure": 2042.0,
+   "claims": 116,
+   "rate": 0.05680705190989226
+  },
+  {
+   "score": 76,
+   "policies": 1817,
+   "exposure": 1817.0,
+   "claims": 101,
+   "rate": 0.05558613098514034
+  },
+  {
+   "score": 80,
+   "policies": 1543,
+   "exposure": 1543.0,
+   "claims": 117,
+   "rate": 0.07582631237848347
+  },
+  {
+   "score": 85,
+   "policies": 1427,
+   "exposure": 1427.0,
+   "claims": 162,
+   "rate": 0.11352487736510161
+  },
+  {
+   "score": 90,
+   "policies": 1569,
+   "exposure": 1569.0,
+   "claims": 126,
+   "rate": 0.08030592734225621
+  },
+  {
+   "score": 95,
+   "policies": 1022,
+   "exposure": 1022.0,
+   "claims": 129,
+   "rate": 0.12622309197651663
+  },
+  {
+   "score": 100,
+   "policies": 466,
+   "exposure": 466.0,
+   "claims": 90,
+   "rate": 0.19313304721030042
+  }
+ ]
+}

@@ -81,6 +81,8 @@ plots/
 !plots/lift_chart_commercial.png
 !plots/lift_chart_technical.png
 !plots/lorenz_curve.png
+# Dashboard screenshots shown in the README
+!docs/screenshots/*.png
 
 # ============================================================================
 # IDE & Editor Noise

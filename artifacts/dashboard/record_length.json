@@ -1,0 +1,26 @@
+{
+ "data": "holdout",
+ "rows": [
+  {
+   "record_length": "under half a year",
+   "exposure_share": 0.19502250127944545,
+   "claims": 1559,
+   "a_over_e_glm": 1.4303,
+   "a_over_e_gbm": 1.4239
+  },
+  {
+   "record_length": "half to one year",
+   "exposure_share": 0.3332359060356055,
+   "claims": 1775,
+   "a_over_e_glm": 0.9942,
+   "a_over_e_gbm": 0.9902
+  },
+  {
+   "record_length": "full year",
+   "exposure_share": 0.47174159268494886,
+   "claims": 1881,
+   "a_over_e_glm": 0.8012,
+   "a_over_e_gbm": 0.8047
+  }
+ ]
+}

@@ -4,7 +4,7 @@ Run from the repo root, after the model scripts:
     python src/summarise_models.py
 
 Reads  outputs/predictions.parquet.
-Writes outputs/model_comparison.json, the only file the dashboard reads. It has three parts:
+Writes outputs/model_comparison.json, which src/build_dashboard_data.py reads. It has three parts:
   final               the final GLM and GBM (eight factors, without BonusMalus): holdout metrics,
                       the GLM-minus-GBM deviance with a bootstrap interval, the double-lift table
   with_bonus_malus    the nine-factor models, kept as a labelled comparison

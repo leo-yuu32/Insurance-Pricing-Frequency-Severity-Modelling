@@ -1,0 +1,5 @@
+# The dashboard is designed for a light background (dark grey "actual" lines, colour-blind-safe series colours).
+# The primary colour is the site's orange (ACCENT in src/dashboard.py), dark enough for small text on white.
+[theme]
+base = "light"
+primaryColor = "#C2410C"

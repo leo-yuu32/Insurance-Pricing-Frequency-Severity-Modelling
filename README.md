@@ -6,6 +6,14 @@ Dashboard: https://insurance-pricing-dashboard.streamlit.app/
 
 The rebuild of this project was developed with an AI coding assistant (Claude Code) under my direction.
 
+The GBM's apparent advantage over the GLM comes from one factor. With all nine rating factors, the GBM's prediction error (Poisson deviance) on the holdout is 1.35% lower than the GLM's (95% interval 1.08% to 1.61%), and its SHAP values show that it relies most on the bonus-malus coefficient, a no-claims score. Checks on the training data suggest that this score was recorded after some of the claims it is used to predict, which is probable leakage, and so the final models leave it out. On the remaining eight factors the GBM's prediction error is 0.07% lower than the GLM's (95% interval -0.04% to 0.18%), which is small and not distinguishable from zero, and therefore on this data the GLM matches the GBM's accuracy while remaining fully transparent.
+
+![The dashboard's header and summary](docs/screenshots/header.png)
+
+![Without the no-claims score, the GBM's advantage all but disappears](docs/screenshots/article_without_the_score.png)
+
+![Double-lift chart of the final GLM against the final GBM](docs/screenshots/double_lift.png)
+
 ## Aim
 
 We ask how much a gradient-boosted model (GBM) improves on a Poisson GLM as a model of claim frequency. Pricing teams use GLMs because each rating factor has a table of relativities that can be read and checked, and so the comparison measures what that interpretability costs in accuracy.
@@ -94,14 +102,15 @@ src/
   run_interactions.py     SHAP analysis and GLM extensions (nine factors)
   check_bonus_malus_timing.py   the BonusMalus timing checks
   run_final.py            the final models
-  summarise_models.py     results file read by the dashboard
+  summarise_models.py     one results file for every model
+  build_dashboard_data.py the small files the dashboard reads
   build_rating_engine.py  the Excel rating engine
   irls.py                 NumPy IRLS solver
   dashboard.py            Streamlit app
 tests/                    pytest suite
 outputs/                  results (JSON and model summaries)
 plots/                    charts
-artifacts/                holdout IDs and Excel workbooks
+artifacts/                holdout IDs, Excel workbooks and the dashboard's data files
 legacy/                   the first version of the project, archived
 ```
 
@@ -121,13 +130,14 @@ python src\check_bonus_malus_timing.py    # about 6 minutes
 python src\tune_gbm.py final              # final GBM tuning (about 10 minutes)
 python src\run_final.py
 python src\summarise_models.py
+python src\build_dashboard_data.py        # the small files the dashboard reads (a few seconds)
 python src\build_rating_engine.py recalc  # "recalc" opens the workbook in Excel to compute and save its values
 python -m pytest
 ```
 
 ## Dashboard
 
-The app reads `outputs/model_comparison.json` only. Since it fits no model and does not import the modelling libraries, it installs from `requirements.txt` alone.
+The app reads only the small precomputed files in `artifacts/dashboard/`, which `src/build_dashboard_data.py` writes from the saved results. Since it fits no model and does not import the modelling libraries, it installs from `requirements.txt` alone.
 
 ```powershell
 python -m pip install -r requirements.txt

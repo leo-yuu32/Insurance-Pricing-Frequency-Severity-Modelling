@@ -1,0 +1,42 @@
+{
+ "sample": "training rows",
+ "rows_used": 10000,
+ "rows": [
+  {
+   "factor": "No-claims score",
+   "mean_abs_shap": 0.35173539220431427
+  },
+  {
+   "factor": "Population density",
+   "mean_abs_shap": 0.11600263482980921
+  },
+  {
+   "factor": "Driver age",
+   "mean_abs_shap": 0.11098294503267019
+  },
+  {
+   "factor": "Region",
+   "mean_abs_shap": 0.07954227881185261
+  },
+  {
+   "factor": "Fuel type",
+   "mean_abs_shap": 0.07926882613286955
+  },
+  {
+   "factor": "Vehicle age",
+   "mean_abs_shap": 0.0789676637319031
+  },
+  {
+   "factor": "Vehicle brand",
+   "mean_abs_shap": 0.060265323657370674
+  },
+  {
+   "factor": "Vehicle power",
+   "mean_abs_shap": 0.02992118608250019
+  },
+  {
+   "factor": "Area type",
+   "mean_abs_shap": 0.0005052143885687081
+  }
+ ]
+}

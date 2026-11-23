@@ -1,0 +1,321 @@
+{
+ "rows": "training rows only",
+ "check1_record_length": [
+  {
+   "record_length": "full year",
+   "rate_on_path": 0.0400127336,
+   "rate_off_path": 0.1986727499,
+   "ratio": 4.965238113598916,
+   "glm_relativity": 3.8616357567065562,
+   "claims_off_path": 1916
+  },
+  {
+   "record_length": "half to one year",
+   "rate_on_path": 0.0666285574,
+   "rate_off_path": 0.1425093447,
+   "ratio": 2.138862827908083,
+   "glm_relativity": 1.8599010947150498,
+   "claims_off_path": 1135
+  },
+  {
+   "record_length": "under half a year",
+   "rate_on_path": 0.098590566,
+   "rate_off_path": 0.1434448601,
+   "ratio": 1.4549552347635368,
+   "glm_relativity": 1.3251161277833359,
+   "claims_off_path": 702
+  }
+ ],
+ "check2_full_year_share": [
+  {
+   "group": "50",
+   "policies": 96733,
+   "claims": 3548,
+   "share_with_claim": 0.0358305852
+  },
+  {
+   "group": "51, 54, 57 (claim-free values next to 50)",
+   "policies": 9177,
+   "claims": 286,
+   "share_with_claim": 0.0298572518
+  },
+  {
+   "group": "52 (three renewals later)",
+   "policies": 1135,
+   "claims": 104,
+   "share_with_claim": 0.0863436123
+  },
+  {
+   "group": "55 (two renewals later)",
+   "policies": 1223,
+   "claims": 146,
+   "share_with_claim": 0.1128372854
+  },
+  {
+   "group": "58 (one renewal later)",
+   "policies": 1206,
+   "claims": 258,
+   "share_with_claim": 0.2006633499
+  },
+  {
+   "group": "62 (surcharged at the last renewal)",
+   "policies": 1326,
+   "claims": 449,
+   "share_with_claim": 0.3167420814
+  },
+  {
+   "group": "one surcharge above another claim-free value",
+   "policies": 1997,
+   "claims": 562,
+   "share_with_claim": 0.2679018528
+  },
+  {
+   "group": "other",
+   "policies": 20615,
+   "claims": 1904,
+   "share_with_claim": 0.0854717439
+  }
+ ],
+ "check3_staircase": [
+  {
+   "block": "1 (IDpol from 24,952)",
+   "value": "50",
+   "claims": 1437,
+   "rate": 0.0583178201
+  },
+  {
+   "block": "1 (IDpol from 24,952)",
+   "value": "52",
+   "claims": 49,
+   "rate": 0.1582287416
+  },
+  {
+   "block": "1 (IDpol from 24,952)",
+   "value": "55",
+   "claims": 49,
+   "rate": 0.1508971032
+  },
+  {
+   "block": "1 (IDpol from 24,952)",
+   "value": "58",
+   "claims": 59,
+   "rate": 0.1582930563
+  },
+  {
+   "block": "1 (IDpol from 24,952)",
+   "value": "62",
+   "claims": 154,
+   "rate": 0.3320129158
+  },
+  {
+   "block": "2 (IDpol from 1,010,420)",
+   "value": "50",
+   "claims": 1486,
+   "rate": 0.0537382423
+  },
+  {
+   "block": "2 (IDpol from 1,010,420)",
+   "value": "52",
+   "claims": 58,
+   "rate": 0.1736649456
+  },
+  {
+   "block": "2 (IDpol from 1,010,420)",
+   "value": "55",
+   "claims": 54,
+   "rate": 0.137612421
+  },
+  {
+   "block": "2 (IDpol from 1,010,420)",
+   "value": "58",
+   "claims": 95,
+   "rate": 0.2382368208
+  },
+  {
+   "block": "2 (IDpol from 1,010,420)",
+   "value": "62",
+   "claims": 139,
+   "rate": 0.3249947793
+  },
+  {
+   "block": "3 (IDpol from 1,173,090)",
+   "value": "50",
+   "claims": 1273,
+   "rate": 0.0522729535
+  },
+  {
+   "block": "3 (IDpol from 1,173,090)",
+   "value": "52",
+   "claims": 25,
+   "rate": 0.0718471408
+  },
+  {
+   "block": "3 (IDpol from 1,173,090)",
+   "value": "55",
+   "claims": 62,
+   "rate": 0.1530609484
+  },
+  {
+   "block": "3 (IDpol from 1,173,090)",
+   "value": "58",
+   "claims": 62,
+   "rate": 0.1705123621
+  },
+  {
+   "block": "3 (IDpol from 1,173,090)",
+   "value": "62",
+   "claims": 115,
+   "rate": 0.2379365867
+  },
+  {
+   "block": "4 (IDpol from 2,120,013)",
+   "value": "50",
+   "claims": 928,
+   "rate": 0.0501775963
+  },
+  {
+   "block": "4 (IDpol from 2,120,013)",
+   "value": "52",
+   "claims": 14,
+   "rate": 0.0537416719
+  },
+  {
+   "block": "4 (IDpol from 2,120,013)",
+   "value": "55",
+   "claims": 39,
+   "rate": 0.1294847806
+  },
+  {
+   "block": "4 (IDpol from 2,120,013)",
+   "value": "58",
+   "claims": 63,
+   "rate": 0.1877671671
+  },
+  {
+   "block": "4 (IDpol from 2,120,013)",
+   "value": "62",
+   "claims": 83,
+   "rate": 0.1985576307
+  },
+  {
+   "block": "5 (IDpol from 2,276,662)",
+   "value": "50",
+   "claims": 1047,
+   "rate": 0.0479250596
+  },
+  {
+   "block": "5 (IDpol from 2,276,662)",
+   "value": "52",
+   "claims": 21,
+   "rate": 0.0752798318
+  },
+  {
+   "block": "5 (IDpol from 2,276,662)",
+   "value": "55",
+   "claims": 14,
+   "rate": 0.0482858294
+  },
+  {
+   "block": "5 (IDpol from 2,276,662)",
+   "value": "58",
+   "claims": 63,
+   "rate": 0.203105451
+  },
+  {
+   "block": "5 (IDpol from 2,276,662)",
+   "value": "62",
+   "claims": 104,
+   "rate": 0.304520843
+  },
+  {
+   "block": "6 (IDpol from 3,143,026)",
+   "value": "50",
+   "claims": 853,
+   "rate": 0.0493155107
+  },
+  {
+   "block": "6 (IDpol from 3,143,026)",
+   "value": "52",
+   "claims": 10,
+   "rate": 0.0524236293
+  },
+  {
+   "block": "6 (IDpol from 3,143,026)",
+   "value": "55",
+   "claims": 11,
+   "rate": 0.0494159707
+  },
+  {
+   "block": "6 (IDpol from 3,143,026)",
+   "value": "58",
+   "claims": 49,
+   "rate": 0.2021549314
+  },
+  {
+   "block": "6 (IDpol from 3,143,026)",
+   "value": "62",
+   "claims": 74,
+   "rate": 0.2654066952
+  },
+  {
+   "block": "7 (IDpol from 4,053,688)",
+   "value": "50",
+   "claims": 1246,
+   "rate": 0.0456771187
+  },
+  {
+   "block": "7 (IDpol from 4,053,688)",
+   "value": "52",
+   "claims": 21,
+   "rate": 0.0729458982
+  },
+  {
+   "block": "7 (IDpol from 4,053,688)",
+   "value": "55",
+   "claims": 12,
+   "rate": 0.0377383263
+  },
+  {
+   "block": "7 (IDpol from 4,053,688)",
+   "value": "58",
+   "claims": 29,
+   "rate": 0.0861647248
+  },
+  {
+   "block": "7 (IDpol from 4,053,688)",
+   "value": "62",
+   "claims": 156,
+   "rate": 0.4429381252
+  },
+  {
+   "block": "8 (IDpol from 4,185,731)",
+   "value": "50",
+   "claims": 805,
+   "rate": 0.051869791
+  },
+  {
+   "block": "8 (IDpol from 4,185,731)",
+   "value": "52",
+   "claims": 8,
+   "rate": 0.0533876473
+  },
+  {
+   "block": "8 (IDpol from 4,185,731)",
+   "value": "55",
+   "claims": 9,
+   "rate": 0.0443589524
+  },
+  {
+   "block": "8 (IDpol from 4,185,731)",
+   "value": "58",
+   "claims": 21,
+   "rate": 0.1005991985
+  },
+  {
+   "block": "8 (IDpol from 4,185,731)",
+   "value": "62",
+   "claims": 20,
+   "rate": 0.090012275
+  }
+ ]
+}

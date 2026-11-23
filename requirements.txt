@@ -1,5 +1,5 @@
 # What the deployed Streamlit app installs. The app only reads precomputed results
-# (outputs/model_comparison.json); the modelling libraries are in requirements-dev.txt.
+# (artifacts/dashboard/*.json); the modelling libraries are in requirements-dev.txt.
 #
 # Streamlit Community Cloud ignores runtime.txt: select Python 3.13 in the app's Advanced settings.
 # These versions have wheels for Python 3.11 to 3.14.

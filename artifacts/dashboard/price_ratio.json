@@ -1,0 +1,280 @@
+{
+ "data": "holdout",
+ "bins": [
+  {
+   "low": 0.6,
+   "high": 0.62,
+   "share": 0.0003025686080222212,
+   "differs": true
+  },
+  {
+   "low": 0.62,
+   "high": 0.64,
+   "share": 0.0003858702779863418,
+   "differs": true
+  },
+  {
+   "low": 0.64,
+   "high": 0.66,
+   "share": 0.0004782080613025024,
+   "differs": true
+  },
+  {
+   "low": 0.66,
+   "high": 0.68,
+   "share": 0.0007951779749795376,
+   "differs": true
+  },
+  {
+   "low": 0.68,
+   "high": 0.7,
+   "share": 0.0010718449097218154,
+   "differs": true
+  },
+  {
+   "low": 0.7,
+   "high": 0.72,
+   "share": 0.0020702464665404516,
+   "differs": true
+  },
+  {
+   "low": 0.72,
+   "high": 0.74,
+   "share": 0.002625698597845907,
+   "differs": true
+  },
+  {
+   "low": 0.74,
+   "high": 0.76,
+   "share": 0.004226734117378289,
+   "differs": true
+  },
+  {
+   "low": 0.76,
+   "high": 0.78,
+   "share": 0.0061027931154316855,
+   "differs": true
+  },
+  {
+   "low": 0.78,
+   "high": 0.8,
+   "share": 0.01043254209145086,
+   "differs": true
+  },
+  {
+   "low": 0.8,
+   "high": 0.82,
+   "share": 0.014735145768144161,
+   "differs": true
+  },
+  {
+   "low": 0.82,
+   "high": 0.84,
+   "share": 0.02027999714332519,
+   "differs": true
+  },
+  {
+   "low": 0.84,
+   "high": 0.86,
+   "share": 0.02891287984501783,
+   "differs": true
+  },
+  {
+   "low": 0.86,
+   "high": 0.88,
+   "share": 0.0365991808978401,
+   "differs": true
+  },
+  {
+   "low": 0.88,
+   "high": 0.9,
+   "share": 0.04632283831360807,
+   "differs": true
+  },
+  {
+   "low": 0.9,
+   "high": 0.92,
+   "share": 0.057052537370681375,
+   "differs": false
+  },
+  {
+   "low": 0.92,
+   "high": 0.94,
+   "share": 0.06236488824385362,
+   "differs": false
+  },
+  {
+   "low": 0.94,
+   "high": 0.96,
+   "share": 0.06973309573454296,
+   "differs": false
+  },
+  {
+   "low": 0.96,
+   "high": 0.98,
+   "share": 0.07142261659634054,
+   "differs": false
+  },
+  {
+   "low": 0.98,
+   "high": 1.0,
+   "share": 0.07431381607518477,
+   "differs": false
+  },
+  {
+   "low": 1.0,
+   "high": 1.02,
+   "share": 0.07182753638149338,
+   "differs": false
+  },
+  {
+   "low": 1.02,
+   "high": 1.04,
+   "share": 0.06522403635250194,
+   "differs": false
+  },
+  {
+   "low": 1.04,
+   "high": 1.06,
+   "share": 0.0597318483957788,
+   "differs": false
+  },
+  {
+   "low": 1.06,
+   "high": 1.08,
+   "share": 0.051245510983752754,
+   "differs": false
+  },
+  {
+   "low": 1.08,
+   "high": 1.1,
+   "share": 0.04457594506098077,
+   "differs": false
+  },
+  {
+   "low": 1.1,
+   "high": 1.12,
+   "share": 0.03555510579024983,
+   "differs": true
+  },
+  {
+   "low": 1.12,
+   "high": 1.14,
+   "share": 0.03040228419786825,
+   "differs": true
+  },
+  {
+   "low": 1.14,
+   "high": 1.16,
+   "share": 0.024455815317095727,
+   "differs": true
+  },
+  {
+   "low": 1.16,
+   "high": 1.18,
+   "share": 0.020280420637162178,
+   "differs": true
+  },
+  {
+   "low": 1.18,
+   "high": 1.2,
+   "share": 0.01627040083740942,
+   "differs": true
+  },
+  {
+   "low": 1.2,
+   "high": 1.22,
+   "share": 0.013467664960713008,
+   "differs": true
+  },
+  {
+   "low": 1.22,
+   "high": 1.24,
+   "share": 0.011376585461824467,
+   "differs": true
+  },
+  {
+   "low": 1.24,
+   "high": 1.26,
+   "share": 0.008924603610874072,
+   "differs": true
+  },
+  {
+   "low": 1.26,
+   "high": 1.28,
+   "share": 0.007792726711970921,
+   "differs": true
+  },
+  {
+   "low": 1.28,
+   "high": 1.3,
+   "share": 0.005619989739157435,
+   "differs": true
+  },
+  {
+   "low": 1.3,
+   "high": 1.32,
+   "share": 0.004568963583267555,
+   "differs": true
+  },
+  {
+   "low": 1.32,
+   "high": 1.34,
+   "share": 0.00380507772285301,
+   "differs": true
+  },
+  {
+   "low": 1.34,
+   "high": 1.36,
+   "share": 0.0027292794078519955,
+   "differs": true
+  },
+  {
+   "low": 1.36,
+   "high": 1.38,
+   "share": 0.002344705082288209,
+   "differs": true
+  },
+  {
+   "low": 1.38,
+   "high": 1.4,
+   "share": 0.0019906565450943207,
+   "differs": true
+  },
+  {
+   "low": 1.4,
+   "high": 1.42,
+   "share": 0.0014827056886978713,
+   "differs": true
+  },
+  {
+   "low": 1.42,
+   "high": 1.44,
+   "share": 0.001105550674906415,
+   "differs": true
+  },
+  {
+   "low": 1.44,
+   "high": 1.46,
+   "share": 0.0009332996584444491,
+   "differs": true
+  },
+  {
+   "low": 1.46,
+   "high": 1.48,
+   "share": 0.0008673778075263137,
+   "differs": true
+  },
+  {
+   "low": 1.48,
+   "high": 1.5,
+   "share": 0.0031932291811827196,
+   "differs": true
+  }
+ ],
+ "threshold": 0.1,
+ "share_differing": 0.37250816880498705,
+ "share_higher": 0.1971664426163885,
+ "share_lower": 0.17534172618859864,
+ "share_beyond_axis": 0.0027816489171527776
+}
